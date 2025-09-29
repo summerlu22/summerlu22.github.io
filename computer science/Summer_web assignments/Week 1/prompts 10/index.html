@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompts</title>
+</head>
+<body>
+    <script>
+        let numOne=prompt("please enter 'a' for your qudratic equation");
+        let numTwo=prompt("please enter 'b' for your qudratic equation");
+        let numThree=prompt("please enter 'c' for your qudratic equation");
+        a = parseFloat(numOne);
+        b = parseFloat(numTwo);
+        c = parseFloat(numThree);
+        let oppofb = 0 - b;
+        let bsquared = b ** 2;
+        let fourac = 4 * a * c;
+        let twoa = 2 * a
+        let square = bsquared - fourac;
+        let baka = oppofb + square;
+        let finalanswer = baka / twoa;
+        document.write(`When a is ${a}, b is ${b}, and c is ${c}, the final answer of your quadratic equation is ${finalanswer}`);
+
+
+    </script>
+</body>
+</html>
