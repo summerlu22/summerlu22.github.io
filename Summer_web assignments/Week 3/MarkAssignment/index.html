@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grading Assignment</title>
+     <style>
+        body {background-color: rgb(231, 163, 173);
+        }
+        h1{    color: rgb(168, 59, 59);
+        }
+        button{
+                color: rgb(167, 84, 84);
+                font-family:Verdana, Geneva, Tahoma, sans-serif;
+                font-size: 30px;
+                
+                
+                background-color: rgb(219, 160, 160);
+    
+            }
+        input{
+            color: rgb(199, 117, 117);
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            font-size: 30px;
+            
+            
+            background-color: rgb(243, 193, 193);
+        }
+    </style>
+</head>
+<body>
+    
+    <h1> Please enter your mark:</h1>
+    <img src="Techer.jpg" width="70">
+    <input type = "text" id ="grade">
+    <button onclick="mark()"> Mark</button>
+    <h1 id ="display"></h1>
+    <script>
+        function mark () {
+            let percent = parseFloat(document.getElementById("grade").value)
+            let letter = "";
+            if (percent ==100) {
+                letter = "YOU GOT A PERFECT SCORE!!"
+                
+            }
+            else if (percent >=90) {
+                letter = "you got an A+!! "
+            }
+            else if (percent >=80) {
+                letter = "you got an A. Nice j*b."
+            }
+            else if (percent >=70) {
+                letter = "you got a B... mid."
+            } else if (percent ==67) {
+                letter = "YOU GOT THE GOD NUMBER. IMMEDIATE PASS."
+            }
+            else if (percent >=60) {
+                letter = "you got a C..oof"
+            }
+           
+            
+            else if (percent >=50) {
+                letter = "you got a D.. Good luck pal"
+            }
+            else {
+                letter = "you got an F, you failed :("
+            }
+
+        let display = `Since you achieved a mark of ${percent}%, ${letter}.`
+        document.getElementById("display").innerHTML=display;
+        }
+        
+    </script>
+</body>
+</html>
