@@ -5,24 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buy your tickets here!</title>
 </head>
-<body>
-    <h>Please enter your name and gender to buy a ticket:</h>
-    <h>Age:</h>
-    <br>
-    <input type="text" id="age">
-    <br>
-    <h>Gender:</h>
-    <br>
-    <input type="text" id="gender">
-    <button onclick="submit()"> Buy Ticket </button>
-    <h1 id ="display"></h1>
-    <script>
-        function submit() {
-            let age = parseFloat(document.getElementById("age").value)
-            
-            let text = "";
-           
+<style>
+     body { background-color: rgb(255, 235, 238);
         }
-    </script>
+        button {background-color: rgb(209, 121, 135);
+            color: rgb(238, 192, 199);
+            font-size: 20px;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        h3 { font-size: 20px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        color: rgb(182, 79, 96);
+        }
+        label {font-size: 20px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        color: rgb(182, 79, 96);
+        }
+        h1 {font-size: 20px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        color: rgb(182, 79, 96);}
+        input { background-color:rgb(241, 206, 212) ;
+        color: rgb(161, 76, 90) ;
+        font-size:30px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        }
+        
+        
+        
+</style>
+<body>
+    <h3>Please type your age and select your gender for a ticket price:</h3>
+    <br>
+    
+  <label>
+    Gender: <br><input type="radio" id="male" name="gender" value="Male"> Male
+  </label><br>
+
+  <label>
+    <input type="radio" id="female" name="gender" value="Female"> Female
+  </label><br><br>
+
+  <label>
+    Age: <br><input type="text" id="age">
+  </label><br><br>
+
+  <button onclick="getPrice()">Buy Ticket!</button>
+
+  <h3 id="result"></h3>
+
+  <script>
+    function getPrice() {
+      // Get selected gender and age
+      let selected = document.querySelector('input[name="gender"]:checked');
+      let strAge = document.getElementById("age").value;
+      let age = parseInt(strAge);
+
+
+      // Calculate base price
+      let price;
+      if (age >= 18) {
+        price = 21;
+            if (selected.value === "Female") {
+            price = price * 0.75;
+        }
+      }
+
+      else if (age >= 12) {
+        price = 14;
+        if (selected.value === "Female") {
+            price = price * 0.75;
+        }
+      }
+      else {
+        price = 7;
+            if (selected.value === "Female") {
+            price = price * 0.75;
+            }
+      }
+
+
+      // Display result
+      document.getElementById("result").innerHTML =
+        `Since you are ${selected.value} and ${age} years old, your Ticket Price is $${price.toFixed(2)}`;
+    }
+  </script>
 </body>
+
 </html>
