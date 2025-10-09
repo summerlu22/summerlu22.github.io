@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Assignment 2.0</title>
+    <style>
+        body { background-color: rgb(225, 245, 207);
+        }
+        button {background-color: rgb(177, 233, 163);
+            color: rgb(104, 156, 77);
+            font-size: 20px;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        h3 { font-size: 20px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        color: rgb(104, 156, 77);
+        }
+        label {font-size: 20px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        color:rgb(104, 156, 77);
+        }
+        h1 {font-size: 20px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        color: rgb(104, 156, 77)}
+        input { background-color:rgb(177, 233, 163) ;
+        color: rgb(104, 156, 77) ;
+        font-size:30px;
+        font-family:Verdana, Geneva, Tahoma, sans-serif;
+        }
+        
+    </style>
+</head>
+<body>
+    <h3>Please type your age and select your gender for a ticket price:</h3>
+    <br>
+    <img src="cat.jpg" width = 70px>
+    <br>
+    
+  <label>
+    Gender: <br><input type="radio" id="male" name="gender" value="Male"> Male
+  </label><br>
+
+  <label>
+    <input type="radio" id="female" name="gender" value="Female"> Female
+  </label><br><br>
+
+  <label>
+    Age: <br><input type="text" id="age">
+  </label><br><br>
+
+  <button onclick="getPrice()">Buy Ticket!</button>
+
+  <h3 id="result"></h3>
+  <script>
+    function getPrice() {
+        let selected = document.querySelector('input[name="gender"]:checked');
+      let strAge = document.getElementById("age").value;
+      let age = parseInt(strAge);
+
+
+      // Calculate base price
+      let price;
+      if (age >= 18 && selected.value === "Female") {
+        price = 15.75;
+      }
+      else if (age >= 12 && selected.value ==="Female") {
+        price = 10.50;
+      }
+      else if (age <12 && selected.value === "Female") {
+        price = 5.25;
+
+      }
+      else if (age >= 18 && selected.value === "Male") {
+        price = 21;
+      }
+      else if (age >= 12 && selected.value ==="Male") {
+        price = 14;
+      }
+      else  {
+        price = 7;
+    }
+    document.getElementById("result").innerHTML =
+        `Since you are ${selected.value} and ${age} years old, your Ticket Price is $${price}`;
+}
+  </script>
+
+    
+</body>
+</html>
