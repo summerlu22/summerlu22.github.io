@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIGH LOW GAME</title>
+    <style>
+        body { background-color: rgb(207, 236, 169);
+            font-family: Arial, sans-serif;
+            
+            margin-top: 50px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        #message {
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 18px;
+            color: rgb(97, 146, 33);
+            }
+        input {font-size: medium;
+        color:rgb(97, 146, 33);
+        }
+        button {background-color:rgb(168, 201, 125) ;
+        color:rgb(86, 131, 27);
+        font-weight: bold;
+        }
+        h1 {color:rgb(80, 122, 24);
+        font-size: xx-large;
+        font-weight: bolder;
+        }
+        p {font-size: medium;
+        color:rgb(85, 131, 25);}
+
+    </style>
+</head>
+
+<body>
+    <h1>Guess the Generated Number</h1>
+    <br>
+    <img src = "cat.jpg" width="100"> <br>
+    <button onclick="Generate()">Generate Random Number</button> <br> <br>
+    <input type="number" id="guessInput" placeholder="Enter your guess" disabled>
+    <button onclick="checkGuess()" id="guessButton" disabled>Guess</button>
+    <p id="attempts"></p>
+    <p id="message"></p>
+    <script>
+    let secretNumber;
+    let attempsLeft = 5;
+    let gameActive = false;
+    function Generate() {
+            secretNumber = Math.floor(Math.random() * 100) + 1;
+            gameActive = true;
+            attemptsLeft = 5;
+            document.getElementById("message").textContent = "Number generated. Start Game.";
+            document.getElementById("attempts").textContent = "Attempts left: " + attemptsLeft;
+            document.getElementById("guessInput").disabled = false;
+            document.getElementById("guessButton").disabled = false;
+            document.getElementById("guessInput").value = "";
+        }
+        function checkGuess() {
+            if (!gameActive) {
+                document.getElementById("message").textContent = "Please generate a number first.";
+                return;
+            }
+            const userGuess = parseInt(document.getElementById("guessInput").value);
+            if (isNaN(userGuess) || userGuess < 1 || userGuess > 100) {
+                document.getElementById("message").textContent = "Please enter a valid number between 1 and 100.";
+                return;
+            }
+            attemptsLeft--;
+            if (userGuess === secretNumber) {
+                document.getElementById("message").textContent = "Congratulations! You've guessed the number!";
+                gameActive = false;
+                document.getElementById("guessInput").disabled = true;
+                document.getElementById("guessButton").disabled = true;
+            } else if (attemptsLeft > 0) {
+                document.getElementById("message").textContent = userGuess < secretNumber ? "Too low! Try again." : "Too high! Try again.";
+                document.getElementById("attempts").textContent = "Attempts left: " + attemptsLeft;
+            } else {
+                document.getElementById("message").textContent = "Game over! The number was " + secretNumber + ".";
+                gameActive = false;
+                document.getElementById("guessInput").disabled = true;
+                document.getElementById("guessButton").disabled = true;
+            }
+        }
+
+    </script>
+</body>
