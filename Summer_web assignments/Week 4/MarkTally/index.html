@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Tally</title>
+</head>
+
+<body>
+   <script>
+  let gender = prompt("Please enter gender", "M or F or q to quit");
+  let tallyM = 0;
+  let tallyG = 0;
+  let mark = 0;
+  let countM = 0;
+  let countG = 0;
+
+  while (gender != 'q' && gender != 'Q') {
+    mark = parseFloat(prompt("Please enter mark"));
+
+    if (gender == 'M' || gender == 'm') {
+      tallyM += mark;
+      countM++;
+    }
+    else if (gender == 'F' || gender == 'f') {
+      tallyG += mark;
+      countG++;
+    }
+    else {
+      alert("Invalid input. Please enter M, F, or q.");
+    }
+
+    gender = prompt("Please enter gender", "M or F or q to quit");
+  }
+
+  let MAvg = countM > 0 ? (tallyM / countM) : 0;
+  let GAvg = countG > 0 ? (tallyG / countG) : 0;
+
+  document.write("Male Average: " + MAvg.toFixed(2) + "<br>");
+  document.write("Female Average: " + GAvg.toFixed(2) + "<br>");
+</script>
+</body>
+</html>
