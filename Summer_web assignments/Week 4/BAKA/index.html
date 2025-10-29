@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baka</title>
+    <style>
+    #bakaImage {
+        display: none;
+    }</style>
+</head>
+<body>
+    <h1>Click on who is the baka</h1>
+    <br>
+    <button onclick="baka()">Cash</button>
+    <button onclick="dream()">Dream face reveal</button>
+    <button onclick="random()">Random person</button>
+    <button onclick="sean()">Sean</button>
+    <p id="result"></p>
+    <img id="bakaImage" src="" alt="Who is the baka?" width="600">
+    <script>
+        function baka() {
+            document.getElementById("result").textContent = "You clicked Cash! Cash is the baka!";
+            document.getElementById("bakaImage").style.display = "block";
+            document.getElementById("bakaImage").src = "cash.jpg";
+        }
+        function dream() {
+            document.getElementById("result").textContent = "Wrong! it's not dream face reveal!";
+            document.getElementById("bakaImage").style.display = "block";
+            document.getElementById("bakaImage").src = "dream.jpg";
+        }
+        function random() {
+            document.getElementById("result").textContent = "Nope! It's not that random guy!";
+            document.getElementById("bakaImage").style.display = "block";
+            document.getElementById("bakaImage").src = "random.jpg";
+        }
+        function sean() {
+            document.getElementById("result").textContent = "Wrong. Sean isn't the baka.";
+            document.getElementById("bakaImage").style.display = "block";
+            document.getElementById("bakaImage").src = "sean.jpg";
+        }
+        
+    </script>
+</body>
+</html>

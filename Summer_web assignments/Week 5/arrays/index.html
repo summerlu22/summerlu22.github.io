@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array</title>
+    <style>
+        body {
+            background-color: rgb(207, 236, 169);
+            font-family: Arial, sans-serif;
+            margin-top: 50px;
+            }
+        h1 {
+            color: rgb(80, 122, 24);
+            font-family: Verdana, Geneva, Tahoma, sans-serif;}
+        
+        button {
+            background-color: rgb(168, 201, 125);
+            color: rgb(86, 131, 27);
+            font-weight: bold;
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        ul {
+            font-size: medium;
+            color: rgb(85, 131, 25);
+        }
+        p {
+            font-size: medium;
+            color: rgb(85, 131, 25);
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        li {
+            margin: 5px 0;
+        }   
+        h2 {
+            color: rgb(80, 122, 24);
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1> Random fruit picker</h1>
+    <h2>list of fruits:</h2>
+    <ul>
+        <li>apple</li>
+        <li>banana</li>
+        <li>orange</li>
+        <li>grape</li>
+        <li>mango</li>
+        <li>peach</li>
+        <li>pear</li>
+        <li>kiwi</li>
+        <li>strawberry</li>
+        <li>blueberry</li>
+    </ul>
+    <button onclick="pickFruit()">Generate Fruit</button>
+    <p id="result"></p>
+    <script>
+        function pickFruit() {
+            const fruits = ["apple", "banana", "orange", "grape", "mango", "peach", "pear", "kiwi", "strawberry", "blueberry"];
+            const randomIndex = Math.floor(Math.random() * fruits.length);
+            const selectedFruit = fruits[randomIndex];
+            document.getElementById("result").textContent = "You got: " + selectedFruit;
+        }   
+    </script>
+</body>
+</html>
