@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array examples</title>
+    <style>
+        body {
+            background-color: pink;
+        }
+        h1 {
+            color: rgb(150, 63, 77);
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            font-weight: bold;
+        }
+        p {
+            color: rgb(180, 91, 106);
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            font-size: medium;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Example one - doubling numbers</h1>
+    <p>The numbers are: 1, 2, 3, 4</p>
+    <p id ="output"></p>
+    <script>
+        let number = [1, 2, 3, 4, ];
+        let doubled = number.map(function(num) {
+            return num * 2;
+        });
+        document.getElementById("output").innerHTML = "The doubled numbers are: " + doubled;
+    </script>
+    <h1>Example two - converting strings to uppercase</h1>
+    <p>The names are: summer, maia, baka</p>
+    <p id="result"></p>
+    <script>
+        let names = ["summer", "maia", "baka"];
+        let upperNames = names.map(function(name) {
+            return name.toUpperCase();
+        });
+        document.getElementById("result").innerHTML = "The names in uppercase are: " + upperNames;
+    </script>
+    <h1>Formatting output</h1>
+    <p>The prices are: 5, 10, 15</p>
+    <p id="ok"></p>
+    <script>
+        let prices = [5, 10, 15];
+        let formattedPrices = prices.map(function(price) {
+            return "$" + price.toFixed(2);
+        });
+        document.getElementById("ok").innerHTML = "The formatted prices are: " + formattedPrices;
+    </script>
+
+</body>
+</html>
