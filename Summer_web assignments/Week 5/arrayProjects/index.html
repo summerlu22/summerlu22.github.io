@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array project - Boosted Marks</title>
+    <style>
+        body {
+            background-color: rgb(220, 230, 241);
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: rgb(50, 75, 120);
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        table {
+            width: 50%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 3px solid rgb(128, 150, 182);
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: rgb(180, 200, 230);
+        }
+        p {
+            font-size: 16px;
+            font-weight: bold;
+            color: rgb(70, 86, 117);
+        }
+    </style>
+</head>
+<body>
+    <h1>Boosted Marks</h1>
+    <p id="result"></p>
+    <script>
+        let marks = [78, 85, 90, 67, 88];
+        let boostedMarks = marks.map(function(mark) {
+            let boosted = mark + 5;
+            return boosted > 100 ? 100 : boosted;
+        });
+        let resultHtml = "<table border='1'><tr><th>Original Marks</th><th>Boosted Marks</th></tr>";
+        for (let i = 0; i < marks.length; i++) {
+            resultHtml += "<tr><td>" + marks[i] + "</td><td>" + boostedMarks[i] + "</td></tr>";
+        }
+        resultHtml += "</table>";
+        document.getElementById("result").innerHTML = resultHtml;
+    </script>
+
+
+</table>
+</body>
+</html>
