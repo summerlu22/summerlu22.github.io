@@ -4,11 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mark Tally</title>
+    <style>
+      body {
+        background-color: rgb(255, 192, 98);
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      h1 {
+        font-size: 30px;
+        color: rgb(177, 101, 14);
+        font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+      
+      }
+    </style>
 </head>
 
 <body>
+  <h1 id="ok"></h1>
    <script>
-  let gender = prompt("Please enter gender", "M or F or q to quit");
+  let gender = prompt("Please enter gender", "M or F or q to finish");
   let tallyM = 0;
   let tallyG = 0;
   let mark = 0;
@@ -35,9 +49,10 @@
 
   let MAvg = countM > 0 ? (tallyM / countM) : 0;
   let GAvg = countG > 0 ? (tallyG / countG) : 0;
+  document.getElementById("ok").innerHTML += "The total average for males is " + MAvg.toFixed(2) + "<br>";
+  document.getElementById("ok").innerHTML += "The total average for females is " + GAvg.toFixed(2) + "<br>";
+  document.getElementById("ok").innerHTML += "Overall Average: " + ((MAvg + GAvg) / 2).toFixed(2) + "<br>";
 
-  document.write("Male Average: " + MAvg.toFixed(2) + "<br>");
-  document.write("Female Average: " + GAvg.toFixed(2) + "<br>");
 </script>
 </body>
 </html>
