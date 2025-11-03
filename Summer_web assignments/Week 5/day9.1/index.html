@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array slideshow</title>
+</head>
+<body>
+    <h>push() - add to end</h>
+    <script>
+        array.put(element);
+        let fruits = ["Banana", "Orange", "Apple", "Mango"];
+        fruits.push("Kiwi");
+        document.write(fruits);
+    </script>
+    <h>Pop() - remove from end</h>
+    <script>
+        array.pop();
+        let vegetables = ["Carrot", "Broccoli", "Asparagus", "Cauliflower"];
+        vegetables.pop();
+        document.write(vegetables);
+    </script>
+    <h>unshift() - add to beginning</h>
+    <script>
+        array.unshift(element);
+        let grains = ["Rice", "Wheat", "Barley"];
+        grains.unshift("Oats");
+        document.write(grains);
+    </script>
+    <h>shift() - remove from beginning</h>
+    <script>
+        array.shift();
+        let nuts = ["Almond", "Cashew", "Walnut", "Pistachio"];
+        nuts.shift();
+        document.write(nuts);   
+    </script>
+    <h>Indexof() - find position</h>
+    <script>
+        array.indexOf(element);
+        let clothes = ["Shirt", "Pants", "Jacket", "Hat"];
+        document.write(clothes.indexOf("Jacket"));
+    </script>
+    <h>includes() - check existence</h>
+    <script>
+        array.includes(element);
+        let shoes = ["Sneakers", "Boots", "Sandals", "Loafers"];
+        document.write(shoes.includes("Boots"));
+    </script>
+    <h>slice() - copy a portion</h>
+    <script>
+        array.slice(start, end);
+        let desserts = ["Cake", "Ice Cream", "Pie", "Pudding"];
+        let yummy = desserts.slice(1, 3);
+        document.write(yummy);
+    </script>
+    <h>map() - Transform each element</h>
+    <script>
+        array.map(function(element){return newValue});
+        let numbers = [1, 2, 3, 4, 5];
+        let doubled = numbers.map(function(num){return num * 2;});
+        document.write(doubled);
+    </script>
+    <h>reduce() - Combine into one</h>
+    <script>
+        array.reduce(function(total, current) {return total+current;}, initialValue);
+        let values = [10, 20, 30, 40];
+        let sum = values.reduce(function(total, num){return total + num;}, 0);
+        document.write(sum);
+    </script>
+    <h></h>
+</body>
+</html>
