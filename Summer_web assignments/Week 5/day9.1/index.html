@@ -6,63 +6,63 @@
     <title>Array slideshow</title>
 </head>
 <body>
-    <h>push() - add to end</h>
+    <h>push() - add to end</h><br>
     <script>
-        array.put(element);
+        //array.put(element);
         let fruits = ["Banana", "Orange", "Apple", "Mango"];
         fruits.push("Kiwi");
         document.write(fruits);
     </script>
-    <h>Pop() - remove from end</h>
+    <br><h>Pop() - remove from end</h><br>
     <script>
-        array.pop();
+        //array.pop();
         let vegetables = ["Carrot", "Broccoli", "Asparagus", "Cauliflower"];
         vegetables.pop();
         document.write(vegetables);
     </script>
-    <h>unshift() - add to beginning</h>
+    <br><h>unshift() - add to beginning</h><br>
     <script>
-        array.unshift(element);
+        //array.unshift(element);
         let grains = ["Rice", "Wheat", "Barley"];
         grains.unshift("Oats");
         document.write(grains);
     </script>
-    <h>shift() - remove from beginning</h>
+    <br><h>shift() - remove from beginning</h><br>
     <script>
-        array.shift();
+        //array.shift();
         let nuts = ["Almond", "Cashew", "Walnut", "Pistachio"];
         nuts.shift();
         document.write(nuts);   
     </script>
-    <h>Indexof() - find position</h>
+    <br><h>Indexof() - find position</h><br>
     <script>
-        array.indexOf(element);
+        //array.indexOf(element);
         let clothes = ["Shirt", "Pants", "Jacket", "Hat"];
         document.write(clothes.indexOf("Jacket"));
     </script>
-    <h>includes() - check existence</h>
+    <br><h>includes() - check existence</h><br>
     <script>
-        array.includes(element);
+        //array.includes(element);
         let shoes = ["Sneakers", "Boots", "Sandals", "Loafers"];
         document.write(shoes.includes("Boots"));
     </script>
-    <h>slice() - copy a portion</h>
+    <br><h>slice() - copy a portion</h><br>
     <script>
-        array.slice(start, end);
+        //array.slice(start, end);
         let desserts = ["Cake", "Ice Cream", "Pie", "Pudding"];
         let yummy = desserts.slice(1, 3);
         document.write(yummy);
     </script>
-    <h>map() - Transform each element</h>
+    <br><h>map() - Transform each element</h><br>
     <script>
-        array.map(function(element){return newValue});
+        //array.map(function(element){return newValue});
         let numbers = [1, 2, 3, 4, 5];
         let doubled = numbers.map(function(num){return num * 2;});
         document.write(doubled);
     </script>
-    <h>reduce() - Combine into one</h>
+    <br><h>reduce() - Combine into one</h><br>
     <script>
-        array.reduce(function(total, current) {return total+current;}, initialValue);
+        //array.reduce(function(total, current) {return total+current;}, initialValue);
         let values = [10, 20, 30, 40];
         let sum = values.reduce(function(total, num){return total + num;}, 0);
         document.write(sum);
