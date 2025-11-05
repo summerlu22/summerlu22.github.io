@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>button</title>
+    <style>
+        body {
+            background-color: rgb(255, 242, 201)
+        }
+        #myButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            color: rgb(177, 77, 94);
+            background-color: rgb(235, 194, 201);
+        }
+        #myButton:hover {
+            background-color: rgb(155, 205, 221);
+            color: rgb(47, 47, 172)
+        }
+        #message {
+            margin-top: 20px;
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px;
+            color: green;
+            font-size: large;
+        }
+
+    </style>
+</head>
+<body>
+    
+    <button id="myButton">Click Me!</button>
+    <p id="message"></p>
+    <script>
+       const button = document.getElementById("myButton");
+         const message = document.getElementById("message");
+         function showMessage() {
+             message.textContent = "Button was clicked!";
+         }
+         function hoverMessage() {
+                message.textContent = "I am being invaded!";
+         }
+         button.addEventListener("click", showMessage);
+         button.addEventListener("mouseover", hoverMessage);
+    </script>
+</body>
+</html>
