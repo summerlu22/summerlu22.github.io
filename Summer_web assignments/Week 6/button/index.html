@@ -35,6 +35,7 @@
     <p id="message"></p>
     <script>
        const button = document.getElementById("myButton");
+       const hoverButton = document.getElementById("hover");
          const message = document.getElementById("message");
          function showMessage() {
              message.textContent = "Button was clicked!";
@@ -42,8 +43,14 @@
          function hoverMessage() {
                 message.textContent = "I am being invaded!";
          }
+         function clearMessage() {
+                message.textContent = "";
+         }
          button.addEventListener("click", showMessage);
          button.addEventListener("mouseover", hoverMessage);
+         button.addEventListener("mouseout", clearMessage);
+         hoverButton.addEventListener("mouseover", hoverMessage);
+         hoverButton.addEventListener("mouseout", clearMessage);
     </script>
 </body>
 </html>
