@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enhanced Button Effects (Single Button)</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      margin-top: 150px;
+      background-color: #f2f2f2;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    /* Base button style */
+    #myButton {
+      background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+      border: none;
+      color: white;
+      padding: 18px 40px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition:
+        background 0.3s ease,
+        transform 0.1s ease,
+        box-shadow 0.1s ease;
+      box-shadow: 0 6px #2e7d32;
+    }
+
+    /* Hover effect */
+    #myButton.hovered {
+      background: linear-gradient(180deg, #66bb6a 0%, #43a047 100%);
+      box-shadow: 0 8px #2e7d32;
+    }
+
+    /* Pressed effect */
+    #myButton.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 3px #1b5e20;
+      background: linear-gradient(180deg, #81c784 0%, #4caf50 100%);
+    }
+
+    /* Flash animation for click */
+    @keyframes flash {
+      0% { background: linear-gradient(180deg, #81c784 0%, #4caf50 100%); }
+      50% { background: linear-gradient(180deg, #a5d6a7 0%, #66bb6a 100%); }
+      100% { background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%); }
+    }
+
+    #myButton.flash {
+      animation: flash 0.3s ease;
+    }
+     #myButton1 {
+      background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+      border: none;
+      color: white;
+      padding: 18px 40px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition:
+        background 0.3s ease,
+        transform 0.1s ease,
+        box-shadow 0.1s ease;
+      box-shadow: 0 6px #2e7d32;
+    }
+
+    /* Hover effect */
+    #myButton1.hovered {
+      background: linear-gradient(180deg, #66bb6a 0%, #43a047 100%);
+      box-shadow: 0 8px #2e7d32;
+    }
+
+    /* Pressed effect */
+    #myButton1.pressed {
+      transform: translateY(4px);
+      box-shadow: 0 3px #1b5e20;
+      background: linear-gradient(180deg, #81c784 0%, #4caf50 100%);
+    }
+
+    /* Flash animation for click */
+    @keyframes flash {
+      0% { background: linear-gradient(180deg, #81c784 0%, #4caf50 100%); }
+      50% { background: linear-gradient(180deg, #a5d6a7 0%, #66bb6a 100%); }
+      100% { background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%); }
+    }
+
+    #myButton1.flash {
+      animation: flash 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Enhanced Button Effects</h2>
+
+  <!-- Single Button -->
+  <button id="myButton">baka</button>
+
+  <!-- Sound effect -->
+  <audio id="clickSound" src="effect.mp3"></audio>
+
+  <script>
+    const button = document.getElementById("myButton");
+    const clickSound = document.getElementById("clickSound");
+
+    // Mouse over
+    button.addEventListener("mouseover", function() {
+      button.classList.add("hovered");
+    });
+
+    // Mouse out
+    button.addEventListener("mouseout", function() {
+      button.classList.remove("hovered");
+    });
+
+    // Mouse down (pressed)
+    button.addEventListener("mousedown", function() {
+      button.classList.add("pressed");
+      clickSound.currentTime = 0; // rewind sound
+      clickSound.play();          // play sound
+    });
+
+    // Mouse up (release)
+    button.addEventListener("mouseup", function() {
+      button.classList.remove("pressed");
+      button.classList.add("flash");
+      setTimeout(() => button.classList.remove("flash"), 300);
+    });
+  </script>
+ <button id="myButton1">ok</button>
+
+  <!-- Sound effect -->
+  <audio id="clickSound1" src="ok.mp3"></audio>
+
+  <script>
+    const button1 = document.getElementById("myButton1");
+    const clickSound1 = document.getElementById("clickSound1");
+
+    // Mouse over
+    button1.addEventListener("mouseover", function() {
+      button1.classList.add("hovered");
+    });
+
+    // Mouse out
+    button1.addEventListener("mouseout", function() {
+      button1.classList.remove("hovered");
+    });
+
+    // Mouse down (pressed)
+    button1.addEventListener("mousedown", function() {
+      button1.classList.add("pressed");
+      clickSound1.currentTime = 0; // rewind sound
+      clickSound1.play();          // play sound
+    });
+
+    // Mouse up (release)
+    button1.addEventListener("mouseup", function() {
+      button1.classList.remove("pressed");
+      button1.classList.add("flash");
+      setTimeout(() => button1.classList.remove("flash"), 300);
+    });
+  </script>
+
+</body>
+</html>

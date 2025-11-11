@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>very good calculator</title>
+    <style>
+        body {
+            background-color: rgb(255, 242, 201)
+        }
+        h1 {
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: rgb(177, 77, 94);
+            
+        }
+        input {
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: rgb(177, 77, 94);
+            background-color:rgb(245, 241, 218)
+        }
+        #display {
+            width: 300px;
+            height: 40px;
+            font-size: 24px;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        button {
+            background: linear gradient(180deg, rgb(235, 194, 201) 0%, rgb(216, 145, 157) 100%);
+            width: 70px;
+            height: 50px;
+            padding: 10px;
+            transition:
+            background 0.3s ease,
+            transform 0.1s ease,    
+            box-shadow 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: rgb(235, 194, 201);
+            color: rgb(177, 77, 94);
+            border: none;
+            border-radius: 999px;
+        }
+        button.pressed {
+            background-color:  rgb(221, 163, 173);
+            color: rgb(158, 55, 72);
+            transform: translateY(4px);
+            box-shadow: 0 3px  rgb(199, 96, 114);
+            background: linear-gradient(180deg, rgb(230, 180, 188) 0%, rgb(216, 145, 157) 100%);
+         }
+        @keyframes flash {
+            0% { background: linear-gradient(180deg, rgb(216, 145, 157) 0%, rgb(235, 194, 201) 100%); }
+            50% { background: linear-gradient(180deg, rgb(240, 200, 208) 0%, rgb(226, 165, 175) 100%); }
+            100% { background: linear-gradient(180deg, rgb(235, 194, 201) 0%, rgb(216, 145, 157) 100%); }
+        }
+        button.hovered {
+            background: linear-gradient(180deg, rgb(240, 200, 208) 0%, rgb(226, 165, 175) 100%);
+            box-shadow: 0 8px  rgb(199, 96, 114);
+        }
+        button.flash {
+            animation: flash 0.3s ease;
+        }
+
+       
+    </style>
+</head>
+<body>
+    <h1>Reliable Calc (short for calculator) </h1>
+    <input type="text" id="display" disabled>
+    <button onclick="clear">Clear</button><br>
+    <button onclick="1">1</button>
+    <button onclick="2">2</button>
+    <button onclick="3">3</button>
+    <button onclick="add">+</button><br>
+    <button onclick="4">4</button>
+    <button onclick="5">5</button>
+    <button onclick="6">6</button>
+    <button onclick="subtract">-</button><br>
+    <button onclick="7">7</button>
+    <button onclick="8">8</button>
+    <button onclick="9">9</button>
+    <button onclick="multiply">x</button><br>
+    <button onclick="decimal">.</button>
+    <button onclick="0">0</button>
+    <button onclick="equals">=</button>
+    <button onclick="divide">÷</button><br>
+    <audio id="clickSound" src="yay.mp3"></audio>
+    <audio id="click" src="keyboard.mp3"></audio>
+    <script>
+        const display = document.getElementById("display");
+        const buttons = document.querySelectorAll("button");
+        const keyAudio = document.getElementById("click"); // keyboard.mp3
+
+        buttons.forEach(button => {
+            button.addEventListener("mouseover", () => {
+                button.classList.add("hovered");
+            });
+            button.addEventListener("mouseout", () => {
+                button.classList.remove("hovered");
+            });
+        });
+
+        // play sound + visual feedback on any button click
+        buttons.forEach(button => {
+            button.addEventListener("click", () => {
+                const value = button.textContent;
+                // Play keyboard sound for all buttons except '=' — '=' should play the special yay sound.
+                if (value !== "=" && keyAudio) {
+                    try {
+                        keyAudio.currentTime = 0;
+                        keyAudio.play();
+                    } catch (e) {
+                        // play() can fail if user hasn't interacted yet or file missing; don't break the app
+                        console.warn('Could not play key audio:', e);
+                    }
+                }
+
+                button.classList.add("pressed");
+                setTimeout(() => button.classList.remove("pressed"), 100);
+                button.classList.add("flash");
+                setTimeout(() => button.classList.remove("flash"), 300);
+            });
+
+        });
+
+        // Calculator logic
+        buttons.forEach(button => {
+            button.addEventListener("click", () => {
+                const value = button.textContent;
+                if (value === "Clear") {
+                    display.value = "";
+                } else if (value === "=") {
+                    const clickSound = document.getElementById("clickSound");
+                    clickSound.currentTime = 0; // rewind sound
+                    clickSound.play(); // play sound
+                    try {
+                        display.value = eval(display.value.replace('x', '*').replace('÷', '/'));
+                    } catch {
+                        display.value = "ERROR";
+                    }
+                } else {
+                    display.value += value;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
