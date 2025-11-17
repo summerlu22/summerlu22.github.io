@@ -1,24 +1,24 @@
-const student1 = {
+let student1 = {
     name: "Alice Johnson",
     age: 17,
     gender: "Female",
 };
-const student2 = {
+let student2 = {
     name: "Bob Smith",
-    age: 16,
+    age: 16,     
     gender: "Male",
 };
-const student3 = {
+let student3 = {
     name: "Charlie Brown",
     age: 18,
     gender: "Male",
 };
-const student4 = {
+let student4 = {
     name: "Diana Prince",
     age: 17,
     gender: "Female",
 };
-const student5 = {
+let student5 = {
     name: "Ethan Hunt",
     age: 19,
     gender: "Male",

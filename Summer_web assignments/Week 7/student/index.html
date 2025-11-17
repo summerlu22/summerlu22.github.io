@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>student Information</title>
+</head>
+<body>
+  <h>Student Informmation</h>
+  <p>Enter first Name</p>
+  <input type="text" id="name" placeholder="First Name"><br>
+  <p>Enter last Name</p>
+  <input type="text" id="lastname" placeholder="Last Name"><br>
+  <p>Enter Age</p>
+  <input type="text" id="age" placeholder="Age"><br>
+  <p>Enter Email</p>
+  <input type="text" id="email" placeholder="Email"><br>
+  <button onclick="student()" id="AddStudent">Add Student</button>
+  <button onclick="clearinfo()" id="Clearinfo">Clear Info</button>
+  <br><h>student list</h>
+  <br><br>
+  <h>First Name, Last Name, Age, Email</h>
+  <br><br>
+  <button onclick="clearlist()" id="Clearlist">Clear List</button>
+  
+  
+  
+    <script>
+    function student(){
+        var fname=document.getElementById("name").value;
+        var lname=document.getElementById("lastname").value;
+        var age=document.getElementById("age").value;
+        var email=document.getElementById("email").value;
+        var para=document.createElement("p");
+        var node=document.createTextNode(fname+","+lname+","+age+","+email);
+        para.appendChild(node);
+        var element=document.body;
+        element.appendChild(para);
+        if (fname=="" || lname=="" || age=="" || email==""){
+            alert("Please fill in all fields.");
+        }
+    }
+    function clearinfo(){
+        document.getElementById("name").value = "";
+        document.getElementById("lastname").value = "";
+        document.getElementById("age").value = "";
+        document.getElementById("email").value = "";
+    } 
+    function clearlist(){
+        var paras = document.getElementsByTagName("p");
+        for (var i = paras.length - 1; i >= 0; i--) {
+            if (paras[i].innerText.includes(",")) {
+                paras[i].remove();
+            }
+        }
+    }
+     
+    
+    
+    </script>
+</body>
+</html>
