@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Country Data Manager</title>
+    <link rel="stylesheet" href="style.css">
+<style>
+body {
+    background: #f8f3c9;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    margin: 20px;
+}
+
+.import-title {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.file-text {
+    width: 250px;
+    padding: 5px;
+}
+
+.btn {
+    padding: 5px 10px;
+    margin-left: 5px;
+}
+
+.form-row {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.field input {
+    padding: 5px;
+    width: 120px;
+}
+
+.create-btn {
+    background: #ffcccc;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.sql-section {
+    margin-top: 30px;
+    display: flex;
+    gap: 20px;
+}
+
+.sql-box {
+    width: 380px;
+    height: 200px;
+    padding: 10px;
+}
+
+.output-box {
+    width: 380px;
+    height: 200px;
+    padding: 10px;
+}
+
+.run-btn {
+    margin-top: 15px;
+    background: #cce5ff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Import Section -->
+    <div class="import-section">
+        <label class="import-title">Import File</label><br>
+        <input type="text" id="filepath" class="file-text" readonly>
+        <input type="file" id="fileInput" style="display:none">
+        <button class="btn" id="browseBtn">Browse...</button>
+    </div>
+
+    <!-- Input Fields -->
+    <div class="form-row">
+        <div class="field">
+            <label>ID</label>
+            <input type="text" id="id">
+        </div>
+        <div class="field">
+            <label>Country</label>
+            <input type="text" id="country">
+        </div>
+        <div class="field">
+            <label>ISO</label>
+            <input type="text" id="iso">
+        </div>
+        <div class="field">
+            <label>Region</label>
+            <input type="text" id="region">
+        </div>
+        <div class="field">
+            <label>Population</label>
+            <input type="text" id="population">
+        </div>
+        <div class="field">
+            <label>GDP</label>
+            <input type="text" id="gdp">
+        </div>
+
+        <button id="createBtn" class="create-btn">Create New</button>
+    </div>
+
+    <!-- SQL Section -->
+    <div class="sql-section">
+        <textarea id="sqlBox" class="sql-box" placeholder="Write SQL here..."></textarea>
+        <textarea id="outputBox" class="output-box" readonly placeholder="Output..."></textarea>
+    </div>
+
+    <button id="runBtn" class="run-btn">Run SQL</button>
+
+</div>
+
+<script>
+// ------------------------------
+// File Browse Button
+// ------------------------------
+document.getElementById("browseBtn").addEventListener("click", () => {
+    document.getElementById("fileInput").click();
+});
+
+document.getElementById("fileInput").addEventListener("change", (event) => {
+    let path = event.target.files[0]?.name || "";
+    document.getElementById("filepath").value = path;
+});
+
+
+// ------------------------------
+// Create New Button
+// ------------------------------
+document.getElementById("createBtn").addEventListener("click", () => {
+    const data = {
+        id: document.getElementById("id").value,
+        country: document.getElementById("country").value,
+        iso: document.getElementById("iso").value,
+        region: document.getElementById("region").value,
+        population: document.getElementById("population").value,
+        gdp: document.getElementById("gdp").value
+    };
+
+    alert("New Entry Created:\n\n" + JSON.stringify(data, null, 2));
+});
+
+
+// ------------------------------
+// Run SQL Button (Mock Output)
+// ------------------------------
+document.getElementById("runBtn").addEventListener("click", () => {
+    const sql = document.getElementById("sqlBox").value.trim();
+    const outputBox = document.getElementById("outputBox");
+
+    outputBox.value += "Executed SQL:\n" + sql + "\n\n";
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
