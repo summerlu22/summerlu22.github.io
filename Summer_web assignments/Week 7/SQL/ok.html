@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Country Data Manager</title>
+<style>
+body {
+    background: #f8c9c9;
+    font-family:Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.container {
+    margin: 20px;
+    
+}
+
+.import-title {
+    font-weight: bold;
+    font-size: 18px;
+    
+}
+
+.file-text {
+    width: 250px;
+    padding: 5px;
+    border: 5px solid #ce5e5e;
+}
+
+.btn {
+    background: #c97e7e;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.form-row {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+   
+}
+
+.field input {
+    padding: 10px;
+    width: 120px;
+    border: 5px solid #ce5e5e;
+}
+
+.create-btn {
+    background: #c97e7e;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    
+}
+
+.examples-section {
+    margin-top: 30px;
+}
+
+.example-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.example-btn {
+    background: #e8b4b4;
+    padding: 8px 15px;
+    border: 2px solid #ce5e5e;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+}
+
+.example-btn:hover {
+    background: #d9a1a1;
+}
+
+.sql-section {
+    margin-top: 30px;
+    display: flex;
+    gap: 20px;
+    
+}
+
+.sql-box {
+    width: 380px;
+    height: 200px;
+    padding: 10px;
+    border: 5px solid #ce5e5e;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.output-box {
+    width: 800px;
+    height: 200px;
+    padding: 10px;
+    border: 5px solid #ce5e5e;
+    overflow: auto;
+    background: white;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.output-placeholder {
+    color: #999;
+}
+
+.query-results {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.query-results th {
+    background: #e8b4b4;
+    color: #333;
+    padding: 8px;
+    text-align: left;
+    font-weight: normal;
+}
+
+.query-results td {
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.query-results tr:nth-child(even) {
+    background: #f5f5f5;
+}
+
+.run-btn {
+    margin-top: 15px;
+    background: #c97e7e;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.clear-btn {
+    margin-top: 15px;
+    background: #c97e7e;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.save-btn {
+    margin-top: 15px;
+    background: #c97e7e;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Import Section -->
+    <div class="import-section">
+        <label class="import-title">Import File</label><br>
+        <input type="text" id="filepath" class="file-text" readonly>
+        <input type="file" id="fileInput" style="display:none">
+        <button class="btn" id="browseBtn">Browse...</button>
+    </div>
+
+    <!-- Input Fields -->
+    <div class="form-row">
+        <div class="field">
+            <label>ID</label>
+            <input type="text" id="id" maxlength="35">
+        </div>
+        <div class="field">
+            <label>Song_Title</label>
+            <input type="text" id="title" maxlength="35">
+        </div>
+        <div class="field">
+            <label>Artist</label>
+            <input type="text" id="artist" maxlength="35">
+        </div>
+        <div class="field">
+            <label>Album</label>
+            <input type="text" id="album" maxlength="35">
+        </div>
+        <div class="field">
+            <label>Adult</label>
+            <input type="text" id="adult" maxlength="35">
+        </div>
+        <div class="field">
+            <label>Release_Year</label>
+            <input type="text" id="release_year" maxlength="35">
+        </div>
+
+        <button id="createBtn" class="create-btn">Create New</button>
+    </div>
+
+    <!-- Example Queries -->
+    <div class="examples-section">
+        <label style="font-weight: bold; font-size: 16px; margin-bottom: 10px; display: block;">Example Queries:</label>
+        <div class="example-buttons">
+            <button class="example-btn" data-query='SELECT * FROM data'>1. SELECT * FROM data</button>
+            <button class="example-btn" data-query='SELECT "ID:" FROM data'>2. SELECT "ID:" FROM data</button>
+            <button class="example-btn" data-query='SELECT COUNT(*) as total_rows FROM data'>3. SELECT COUNT(*) as total_rows FROM data</button>
+            <button class="example-btn" data-query='SELECT * FROM data LIMIT 5'>4. SELECT * FROM data LIMIT 5</button>
+            <button class="example-btn" data-query='SELECT "ID:", COUNT(*) as count FROM data GROUP BY "ID:" ORDER BY count DESC'>5. SELECT "ID:", COUNT(*) as count FROM data GROUP BY "ID:" ORDER BY count DESC</button>
+        </div>
+    </div>
+
+    <!-- SQL Section -->
+    <div class="sql-section">
+        <textarea id="sqlBox" class="sql-box" placeholder="Write SQL here..."></textarea>
+        <div id="outputBox" class="output-box">
+            <div class="output-placeholder">Output...</div>
+        </div>
+    </div>
+
+    <div>
+        <button id="runBtn" class="run-btn">Run SQL</button>
+        <button id="clearBtn" class="clear-btn">Clear Output</button>
+    </div>
+
+    <button id="saveBtn" class="save-btn">Save Current Data as CSV</button>
+
+</div>
+
+<script>
+// ------------------------------
+// Database Storage
+// ------------------------------
+let currentData = [];
+
+// ------------------------------
+// File Browse Button & Import
+// ------------------------------
+document.getElementById("browseBtn").addEventListener("click", () => {
+    document.getElementById("fileInput").click();
+});
+
+document.getElementById("fileInput").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    document.getElementById("filepath").value = file.name;
+    
+    // Read and parse the file (assuming CSV format)
+    const text = await file.text();
+    currentData = parseCSV(text);
+    
+    alert(`File imported successfully! ${currentData.length} rows loaded.`);
+});
+
+function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        const row = {};
+        headers.forEach((header, index) => {
+            row[header] = values[index] || '';
+        });
+        data.push(row);
+    }
+    
+    return data;
+}
+
+function parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    values.push(current.trim());
+    
+    return values;
+}
+
+
+// ------------------------------
+// Create New Button
+// ------------------------------
+document.getElementById("createBtn").addEventListener("click", () => {
+    const newEntry = {
+        ID: document.getElementById("id").value,
+        Song_Title: document.getElementById("title").value,
+        Artist: document.getElementById("artist").value,
+        Album: document.getElementById("album").value,
+        Adult: document.getElementById("adult").value,
+        Release_Year: document.getElementById("release_year").value
+    };
+
+    currentData.push(newEntry);
+    alert("New Entry Created and added to database!\n\n" + JSON.stringify(newEntry, null, 2));
+    
+    // Clear the form
+    document.getElementById("id").value = '';
+    document.getElementById("title").value = '';
+    document.getElementById("artist").value = '';
+    document.getElementById("album").value = '';
+    document.getElementById("adult").value = '';
+    document.getElementById("release_year").value = '';
+});
+
+// ------------------------------
+// Example Query Buttons
+// ------------------------------
+document.querySelectorAll('.example-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const query = btn.getAttribute('data-query');
+        document.getElementById('sqlBox').value = query;
+    });
+});
+
+// ------------------------------
+// Simple SQL Parser & Executor
+// ------------------------------
+document.getElementById("runBtn").addEventListener("click", () => {
+    const sql = document.getElementById("sqlBox").value.trim();
+    const outputBox = document.getElementById("outputBox");
+
+    if (currentData.length === 0) {
+        outputBox.innerHTML = '<div style="color: red;">No data loaded. Please import a file first or create entries.</div>';
+        return;
+    }
+
+    try {
+        const result = executeSQLQuery(sql, currentData);
+        displayResults(result, outputBox);
+    } catch (error) {
+        outputBox.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+    }
+});
+
+function executeSQLQuery(sql, data) {
+    sql = sql.toUpperCase().replace(/\s+/g, ' ').trim();
+    
+    // Basic SELECT parser
+    if (!sql.startsWith('SELECT')) {
+        throw new Error('Only SELECT queries are supported');
+    }
+
+    let results = [...data];
+    
+    // Handle LIMIT
+    const limitMatch = sql.match(/LIMIT (\d+)/);
+    if (limitMatch) {
+        const limit = parseInt(limitMatch[1]);
+        results = results.slice(0, limit);
+        sql = sql.replace(/LIMIT \d+/, '').trim();
+    }
+
+    // Handle GROUP BY with COUNT
+    const groupByMatch = sql.match(/GROUP BY "?([^"]+)"?/i);
+    if (groupByMatch) {
+        const groupField = groupByMatch[1].replace(':', '').toLowerCase();
+        const countMatch = sql.match(/COUNT\(\*\)\s+AS\s+(\w+)/i);
+        const countAlias = countMatch ? countMatch[1] : 'count';
+        
+        const grouped = {};
+        results.forEach(row => {
+            const key = row[groupField] || row[Object.keys(row).find(k => k.toLowerCase() === groupField)];
+            grouped[key] = (grouped[key] || 0) + 1;
+        });
+        
+        results = Object.entries(grouped).map(([key, count]) => ({
+            [groupField]: key,
+            [countAlias]: count
+        }));
+        
+        // Handle ORDER BY
+        if (sql.includes('ORDER BY')) {
+            const orderMatch = sql.match(/ORDER BY (\w+)( DESC)?/i);
+            if (orderMatch) {
+                const orderField = orderMatch[1].toLowerCase();
+                const desc = orderMatch[2] !== undefined;
+                results.sort((a, b) => {
+                    const aVal = a[orderField];
+                    const bVal = b[orderField];
+                    return desc ? bVal - aVal : aVal - bVal;
+                });
+            }
+        }
+    }
+    // Handle COUNT(*) without GROUP BY
+    else if (sql.includes('COUNT(*)')) {
+        const countMatch = sql.match(/COUNT\(\*\)\s+AS\s+(\w+)/i);
+        const countAlias = countMatch ? countMatch[1] : 'count';
+        return [{ [countAlias]: results.length }];
+    }
+    // Handle SELECT specific columns
+    else if (!sql.includes('SELECT *')) {
+        const selectMatch = sql.match(/SELECT (.+?) FROM/i);
+        if (selectMatch) {
+            const columns = selectMatch[1].split(',').map(col => {
+                const cleaned = col.trim().replace(/"/g, '').replace(':', '');
+                return cleaned;
+            });
+            
+            results = results.map(row => {
+                const newRow = {};
+                columns.forEach(col => {
+                    const key = Object.keys(row).find(k => k.toLowerCase() === col.toLowerCase());
+                    if (key) {
+                        newRow[col] = row[key];
+                    }
+                });
+                return newRow;
+            });
+        }
+    }
+
+    return results;
+}
+
+function displayResults(results, container) {
+    if (!results || results.length === 0) {
+        container.innerHTML = '<div>No results found</div>';
+        return;
+    }
+
+    const columns = Object.keys(results[0]);
+    
+    let html = '<table class="query-results">';
+    
+    // Header
+    html += '<thead><tr>';
+    columns.forEach(col => {
+        html += `<th>${col}</th>`;
+    });
+    html += '</tr></thead>';
+    
+    // Body
+    html += '<tbody>';
+    results.forEach(row => {
+        html += '<tr>';
+        columns.forEach(col => {
+            html += `<td>${row[col] !== undefined ? row[col] : ''}</td>`;
+        });
+        html += '</tr>';
+    });
+    html += '</tbody>';
+    
+    html += '</table>';
+    
+    container.innerHTML = html;
+}
+
+// ------------------------------
+// Clear Output Button
+// ------------------------------
+document.getElementById("clearBtn").addEventListener("click", () => {
+    document.getElementById("outputBox").innerHTML = '<div class="output-placeholder">Output...</div>';
+});
+
+// ------------------------------
+// Save Current Data as CSV
+// ------------------------------
+document.getElementById("saveBtn").addEventListener("click", () => {
+    if (currentData.length === 0) {
+        alert("No data to save. Please import a file or create entries first.");
+        return;
+    }
+
+    // Get headers from first row
+    const headers = Object.keys(currentData[0]);
+    
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n';
+    
+    currentData.forEach(row => {
+        const values = headers.map(header => {
+            const value = row[header] || '';
+            // Wrap in quotes if contains comma
+            return value.toString().includes(',') ? `"${value}"` : value;
+        });
+        csvContent += values.join(',') + '\n';
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data_export.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    alert("CSV file saved successfully!");
+});
+</script>
