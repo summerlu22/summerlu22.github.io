@@ -198,6 +198,10 @@ body {
             <input type="text" id="adult" maxlength="35">
         </div>
         <div class="field">
+            <label>Gender</label>
+            <input type="text" id="gender" maxlength="35">
+        </div>
+        <div class="field">
             <label>Release_Year</label>
             <input type="text" id="release_year" maxlength="35">
         </div>
@@ -306,17 +310,55 @@ function parseCSVLine(line) {
 // Create New Button
 // ------------------------------
 document.getElementById("createBtn").addEventListener("click", () => {
-    const newEntry = {
-        ID: document.getElementById("id").value,
-        Song_Title: document.getElementById("title").value,
-        Artist: document.getElementById("artist").value,
-        Album: document.getElementById("album").value,
-        Adult: document.getElementById("adult").value,
-        Release_Year: document.getElementById("release_year").value
-    };
+    const id = document.getElementById("id").value.trim();
+    const title = document.getElementById("title").value.trim();
+    const artist = document.getElementById("artist").value.trim();
+    const album = document.getElementById("album").value.trim();
+    const adult = document.getElementById("adult").value.trim();
+    const gender = document.getElementById("gender").value.trim();
+    const releaseYear = document.getElementById("release_year").value.trim();
+    
+    // Validate that all fields are filled
+    if (!id || !title || !artist || !album || !adult || !gender || !releaseYear) {
+        alert("Please fill out all boxes.");
+        return;
+    }
+    
+    // Match the column names from your imported CSV file
+    // If CSV has "ID:" format, use that; otherwise use plain names
+    const sampleKeys = currentData.length > 0 ? Object.keys(currentData[0]) : [];
+    
+    const newEntry = {};
+    
+    // Dynamically match column names from existing data
+    if (sampleKeys.length > 0) {
+        sampleKeys.forEach(key => {
+            const lowerKey = key.toLowerCase().replace(/:/g, '').replace(/_/g, '');
+            if (lowerKey === 'id') newEntry[key] = id;
+            else if (lowerKey === 'songtitle') newEntry[key] = title;
+            else if (lowerKey === 'artist') newEntry[key] = artist;
+            else if (lowerKey === 'album') newEntry[key] = album;
+            else if (lowerKey === 'adult') newEntry[key] = adult;
+            else if (lowerKey === 'gender') newEntry[key] = gender;
+            else if (lowerKey === 'releaseyear') newEntry[key] = releaseYear;
+        });
+    } else {
+        // If no data loaded yet, use default format
+        newEntry['ID:'] = id;
+        newEntry['Song_Title:'] = title;
+        newEntry['Artist:'] = artist;
+        newEntry['Album:'] = album;
+        newEntry['Adult:'] = adult;
+        newEntry['Gender:'] = gender;
+        newEntry['Release_Year:'] = releaseYear;
+    }
 
     currentData.push(newEntry);
     alert("New Entry Created and added to database!\n\n" + JSON.stringify(newEntry, null, 2));
+    
+    // Automatically display the updated data
+    const outputBox = document.getElementById("outputBox");
+    displayResults(currentData, outputBox);
     
     // Clear the form
     document.getElementById("id").value = '';
@@ -324,6 +366,7 @@ document.getElementById("createBtn").addEventListener("click", () => {
     document.getElementById("artist").value = '';
     document.getElementById("album").value = '';
     document.getElementById("adult").value = '';
+    document.getElementById("gender").value = '';
     document.getElementById("release_year").value = '';
 });
 
