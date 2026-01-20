@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Abandoned Hospital</title>
+<style>
+  * { margin:0; padding:0; box-sizing: border-box; }
+  body { overflow: hidden; background:#000; font-family:'Courier New'; }
+  #gameCanvas { display:block; cursor: none; }
+  #ui {
+    position: absolute; top: 20px; left: 20px; z-index:10;
+    color:#fff; font-family:'Courier New'; font-size:18px; display:flex; flex-direction:column;
+  }
+  #healthContainer {
+    width:200px; height:20px; border:2px solid #fff; background:#444; margin-bottom:10px; position:relative;
+  }
+  #healthBar {
+    height:100%; background:#0f0; width:100%;
+  }
+  #objective { margin-top:10px; }
+  #dialogBox {
+    position: absolute; bottom:40px; left:50%; transform:translateX(-50%);
+    background: rgba(0,0,0,0.85); border:3px solid #fff; padding:20px 30px; max-width:700px; display:none; color:#fff; font-size:20px;
+  }
+  #dialogName { font-weight:bold; margin-bottom:10px; font-size:18px; color:#ffaa00; }
+  #dialogText { line-height:1.4; }
+  #continuePrompt { position:absolute; bottom:5px; right:10px; font-size:14px; color:#aaa; animation:blink 1s infinite; }
+  @keyframes blink { 0%,50% { opacity:1; } 51%,100% { opacity:0; } }
+  #gameOver { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center; display:none; z-index:100; }
+  #gameOver h1 { font-size:60px; color:#f00; margin-bottom:20px; text-shadow:3px 3px 6px #000; }
+  #gameOver.won h1 { color:#0f0; }
+  #restartBtn { padding:15px 40px; font-size:20px; background:#f00; color:#fff; border:none; cursor:pointer; font-family:'Courier New'; font-weight:bold; transition:background 0.3s; }
+  #restartBtn:hover { background:#c00; }
+  #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:20px; height:20px; pointer-events:none; z-index:5; display:none; }
+  #crosshair::before, #crosshair::after { content:''; position:absolute; background:rgba(255,255,255,0.8); }
+  #crosshair::before { width:2px; height:20px; left:9px; }
+  #crosshair::after { width:20px; height:2px; top:9px; }
+  #fadeOverlay { position:absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:50; pointer-events:none; opacity:0; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="crosshair"></div>
+<div id="fadeOverlay"></div>
+<div id="ui">
+  <div id="healthContainer"><div id="healthBar"></div></div>
+  <div id="objective">Find the crowbar!</div>
+</div>
+<div id="dialogBox">
+  <div id="dialogName"></div>
+  <div id="dialogText"></div>
+  <div id="continuePrompt">Press SPACE to continue...</div>
+</div>
+<div id="gameOver">
+  <h1 id="gameOverText">GAME OVER</h1>
+  <button id="restartBtn">RESTART</button>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let gamePhase='driving'; // 'driving', 'waitingForDialog', 'arrived', 'exploring', 'dead', 'won'
+let dialogQueue=[];
+let currentDialog=0;
+let keys={};
+let mouseX=0;
+let player={x:2,y:2,angle:0,health:100,hasCrowbar:false,hasKey:false};
+let ghost={x:25,y:25,active:false, chaseSpeed:0.03};
+let deadBody={x:12,y:12,seen:false};
+let keyItem={x:8,y:8,found:false};
+let safe={x:16,y:16,opened:false,containsCrowbar:true};
+let door={x:20,y:20,locked:true};
+let map=[
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,0,1],
+  [1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
+  [1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
+  [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],
+  [1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+const introDialogs=[
+  {name:"Hitchhiker", text:"Yo, can you take me to the hospital for $500?"},
+  {name:"You", text:"Heck yeah!"}
+];
+const arriveDialogs=[
+  {name:"Hitchhiker", text:"Wait here! I'll be right back."}
+];
+const exploreDialogs=[
+  {name:"You (thinking)", text:"Wow, this place is huge. I see a dead body, but I should look for a key or safe."}
+];
+const deadBodyDialogs=[
+  {name:"You", text:"Oh shoot! He's dead! I gotta get out of here!"},
+  {name:"You", text:"Doesn't seem like I'm here alone..."}
+];
+
+document.addEventListener('keydown', e=>{
+  keys[e.key.toLowerCase()]=true;
+  if(e.key===' ' && dialogQueue.length>0){
+    e.preventDefault();
+    advanceDialog();
+  }
+});
+document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
+document.addEventListener('mousemove', e=>{
+  if(gamePhase==='gameplay'){
+    mouseX=e.movementX || 0;
+  }
+});
+document.getElementById('restartBtn').onclick=()=>{ location.reload(); }
+
+function showDialog(dialogs){
+  dialogQueue=dialogs;
+  currentDialog=0;
+  displayDialog();
+}
+function displayDialog(){
+  if(currentDialog<dialogQueue.length){
+    document.getElementById('dialogName').textContent=dialogQueue[currentDialog].name;
+    document.getElementById('dialogText').textContent=dialogQueue[currentDialog].text;
+    document.getElementById('dialogBox').style.display='block';
+  } else {
+    document.getElementById('dialogBox').style.display='none';
+    dialogQueue=[];
+    handleDialogComplete();
+  }
+}
+function advanceDialog(){
+  currentDialog++;
+  displayDialog();
+}
+function handleDialogComplete(){
+  if(gamePhase==='driving'){
+    startMaze();
+  } else if(gamePhase==='arrived'){
+    showMaze();
+  } else if(gamePhase==='exploring'){
+    gamePhase='gameplay';
+  } else if(gamePhase==='dead' || gamePhase==='won'){
+    document.getElementById('gameOver').style.display='block';
+  }
+}
+
+// Start maze
+function startMaze(){
+  gamePhase='maze';
+  document.getElementById('objective').textContent='Find the key, safe, or the crowbar!';
+}
+function showMaze(){
+  gamePhase='exploring';
+  document.getElementById('objective').textContent='Search for the key, safe, or the crowbar!';
+}
+
+// Main game loop
+function gameLoop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(gamePhase==='driving'){
+    renderDriving();
+  } else if(gamePhase==='arrived'){
+    renderArrival();
+  } else if(gamePhase==='maze'){
+    renderMaze();
+  } else if(gamePhase==='exploring'){
+    updatePlayer();
+    updateGhost();
+    renderMaze();
+    drawUI();
+    drawDirections();
+  } else if(gamePhase==='dead'||gamePhase==='won'){
+    drawUI();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+requestAnimationFrame(gameLoop);
+
+// Draw UI - health bar
+function drawUI(){
+  document.getElementById('healthBar').style.width=player.health+'%';
+}
+
+// Draw direction arrow
+function drawDirections() {
+  if (gamePhase==='exploring' && !deadBody.seen) {
+    ctx.fillStyle='white';
+    ctx.font='30px Arial';
+    ctx.fillText('→', deadBody.x*40, deadBody.y*40-20);
+  }
+}
+
+// Rendering driving scene
+let driveProgress=0;
+function renderDriving() {
+  driveProgress += 0.02;
+  // Sky
+  const grad = ctx.createLinearGradient(0,0,0,canvas.height/2);
+  grad.addColorStop(0,'#001122');
+  grad.addColorStop(1,'#003344');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height/2);
+  ctx.fillStyle='#0a1a0a';
+  ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
+
+  // Road with perspective
+  const roadWidth=400+Math.sin(driveProgress*2)*50;
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath();
+  ctx.moveTo(canvas.width/2 - roadWidth/2,canvas.height/2);
+  ctx.lineTo(canvas.width/2 + roadWidth/2,canvas.height/2);
+  ctx.lineTo(canvas.width,canvas.height);
+  ctx.lineTo(0,canvas.height);
+  ctx.closePath();
+  ctx.fill();
+
+  // Lane markers
+  ctx.fillStyle='#ff0';
+  for(let i=0;i<10;i++){
+    let yOffset=(i*100 + driveProgress*600)%canvas.height;
+    ctx.fillRect(canvas.width/2-5,yOffset,10,40);
+  }
+
+  // Sides (buildings or trees)
+  ctx.fillStyle='#0d1f0d';
+  for(let i=0;i<8;i++){
+    let baseY=(i*80+driveProgress*400)%canvas.height;
+    let pers=baseY/canvas.height;
+    let w=40+pers*60;
+    let h=100+pers*150;
+    ctx.fillRect(50,baseY,w,h);
+    ctx.fillRect(canvas.width-50-w,baseY,w,h);
+  }
+
+  // Headlights glow
+  let gradient=ctx.createRadialGradient(canvas.width/2,canvas.height*0.9,50,canvas.width/2,canvas.height,400);
+  gradient.addColorStop(0,'rgba(255,255,200,0.3)');
+  gradient.addColorStop(1,'rgba(255,255,200,0)');
+  ctx.fillStyle=gradient;
+  ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
+
+  // Dashboard overlay
+  ctx.fillStyle='#000';
+  ctx.globalAlpha=0.5;
+  ctx.fillRect(0,canvas.height*0.85,canvas.width,canvas.height*0.15);
+  ctx.globalAlpha=1;
+
+  // End scene
+  if(driveProgress>=10){
+    gamePhase='arrived';
+    showDialog(arriveDialogs);
+  }
+}
+
+// Render Arrival scene
+function renderArrival() {
+  ctx.fillStyle='#0a0a1a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#1a1a1a';
+  ctx.fillRect(0,canvas.height*0.7,canvas.width,canvas.height*0.3);
+  ctx.fillStyle='#2a2a2a';
+  ctx.fillRect(canvas.width*0.3,canvas.height*0.2,canvas.width*0.4,canvas.height*0.5);
+  // Windows
+  for(let r=0;r<4;r++){
+    for(let c=0;c<5;c++){
+      ctx.fillStyle=Math.random()>0.6?'#ffcc66':'#111';
+      ctx.fillRect(canvas.width*0.35+c*80,canvas.height*0.25+r*80,40,60);
+    }
+  }
+  // Car
+  drawCar(canvas.width*0.1,canvas.height*0.6,200,120);
+  // Hitchhiker walking
+  let walkProgress= (Date.now()%3000)/3000;
+  let hitchX=canvas.width*0.15+(canvas.width*0.3)*walkProgress;
+  drawCharacter(hitchX,canvas.height*0.55,100,180,false,false);
+}
+
+// Render maze exploration
+function renderMaze() {
+  ctx.fillStyle='#222';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#555';
+  ctx.font='20px Arial';
+  ctx.fillText('Maze - find the key, safe, or crowbar!',20,40);
+  const cellSize=40;
+  // Draw maze walls
+  for(let y=0;y<map.length;y++){
+    for(let x=0;x<map[0].length;x++){
+      if(map[y][x]===1){
+        ctx.fillStyle='#444';
+        ctx.fillRect(x*cellSize,y*cellSize,cellSize,cellSize);
+      }
+    }
+  }
+  // Draw key
+  ctx.fillStyle='#0f0';
+  ctx.fillRect(keyItem.x*cellSize,keyItem.y*cellSize,cellSize,cellSize);
+  // Draw safe
+  ctx.fillStyle='#ff0';
+  ctx.fillRect(safe.x*cellSize,safe.y*cellSize,cellSize,cellSize);
+  // Draw dead body
+  ctx.fillStyle='#f00';
+  ctx.fillRect(deadBody.x*cellSize,deadBody.y*cellSize,cellSize,cellSize);
+  // Draw door
+  ctx.fillStyle=door.locked?'#888':'#0f0';
+  ctx.fillRect(door.x*cellSize,door.y*cellSize,cellSize,cellSize);
+  // Arrow to dead body if not seen
+  if(!deadBody.seen){
+    ctx.fillStyle='white';
+    ctx.font='30px Arial';
+    ctx.fillText('→',deadBody.x*cellSize+10,deadBody.y*cellSize+30);
+  }
+}
+
+// Draw character
+function drawCharacter(x,y,w,h, speaking, isPlayer){
+  ctx.fillStyle=isPlayer?'#3366cc':'#cc6633';
+  ctx.fillRect(x,y,w,h*0.6);
+  ctx.fillStyle='#deb887';
+  ctx.beginPath();
+  ctx.arc(x+w/2,y+h/4,w/4,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#000';
+  ctx.fillRect(x+w*0.4,y+h*0.2,w*0.1,h*0.03);
+  ctx.fillRect(x+w*0.5,y+h*0.2,w*0.1,h*0.03);
+  if(speaking && Math.floor(Date.now()/200)%2===0){
+    ctx.fillRect(x+w*0.45,y+h*0.3,w*0.1,h*0.02);
+  } else {
+    ctx.fillRect(x+w*0.45,y+h*0.3,w*0.1,h*0.01);
+  }
+  ctx.fillStyle=isPlayer?'#3366cc':'#cc6633';
+  ctx.fillRect(x+w*0.15,y+h*0.5,w*0.15,h*0.3);
+  ctx.fillRect(x+w*0.7,y+h*0.5,w*0.15,h*0.3);
+}
+
+// Draw car
+function drawCar(x,y,w,h){
+  ctx.fillStyle='#333';
+  ctx.fillRect(x,y+h*0.4,w,h*0.4);
+  ctx.fillStyle='#444';
+  ctx.fillRect(x+w*0.2,y,w*0.6,h*0.5);
+  ctx.fillStyle='#87ceeb';
+  ctx.fillRect(x+w*0.25,y+h*0.05,w*0.2,h*0.35);
+  ctx.fillRect(x+w*0.55,y+h*0.05,w*0.2,h*0.35);
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.arc(x+w*0.25,y+h*0.85,w*0.12,0,Math.PI*2);
+  ctx.arc(x+w*0.75,y+h*0.85,w*0.12,0,Math.PI*2);
+  ctx.fill();
+}
+
+// Main dialog scene
+function renderDialogScene(){
+  ctx.fillStyle='#87ceeb';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#666';
+  ctx.fillRect(0,canvas.height*0.6,canvas.width,canvas.height*0.4);
+  ctx.fillStyle='#333';
+  ctx.fillRect(0,canvas.height*0.65,canvas.width,canvas.height*0.2);
+  ctx.fillStyle='#ff0';
+  for(let i=0;i<10;i++){
+    ctx.fillRect(i*120+20,canvas.height*0.74,60,8);
+  }
+  for(let r=0;r<4;r++){
+    for(let c=0;c<5;c++){
+      ctx.fillStyle=Math.random()>0.6?'#555':'#666';
+      ctx.fillRect(canvas.width*0.35+c*80,canvas.height*0.6 - r*80,40,60);
+    }
+  }
+  drawCar(canvas.width*0.15,canvas.height*0.5,300,150);
+  const currentSpeaker=dialogQueue[currentDialog]?.name;
+  drawCharacter(canvas.width*0.6,canvas.height*0.4,150,250,
+    currentSpeaker==="Hitchhiker",false);
+  drawCharacter(canvas.width*0.3,canvas.height*0.45,140,240,
+    currentSpeaker==="You",true);
+}
+
+// Player update
+function updatePlayer(){
+  // WASD for walking
+  const moveSpeed = 0.02;
+  if(keys['w']){ player.x+=Math.cos(player.angle)*moveSpeed; player.y+=Math.sin(player.angle)*moveSpeed; }
+  if(keys['s']){ player.x-=Math.cos(player.angle)*moveSpeed; player.y-=Math.sin(player.angle)*moveSpeed; }
+  if(keys['a']){ player.angle-=0.03; }
+  if(keys['d']){ player.angle+=0.03; }
+  // Keep in bounds
+  if(player.x<0.5) player.x=0.5;
+  if(player.x>map[0].length-0.5) player.x=map[0].length-0.5;
+  if(player.y<0.5) player.y=0.5;
+  if(player.y>map.length-0.5) player.y=map.length-0.5;
+  checkInteractions();
+}
+
+// Interaction checks
+function checkInteractions(){
+  // Dead body
+  if(!deadBody.seen && distance(player.x,player.y,deadBody.x,deadBody.y)<0.7){
+    deadBody.seen=true;
+    gamePhase='dead';
+    showDialog(deadBodyDialogs);
+  }
+  // Key
+  if(!keyItem.found && distance(player.x,player.y,keyItem.x,keyItem.y)<0.7){
+    keyItem.found=true;
+    player.hasKey=true;
+    document.getElementById('objective').textContent='Find the safe!';
+  }
+  // Safe
+  if(!safe.opened && distance(player.x,player.y,safe.x,safe.y)<0.7 && player.hasKey){
+    safe.opened=true;
+    document.getElementById('objective').textContent='Open the safe!';
+  }
+  // Crowbar from safe
+  if(safe.opened && !player.hasCrowbar && distance(player.x,player.y,safe.x,safe.y)<0.7 && safe.containsCrowbar){
+    player.hasCrowbar=true;
+    document.getElementById('objective').textContent='Use crowbar to escape!';
+  }
+  // Door
+  if(distance(player.x,player.y,door.x,door.y)<0.7){
+    if(door.locked && !player.hasKey){
+      document.getElementById('objective').textContent='Door is locked. Find the key!';
+    } else if(door.locked && player.hasKey){
+      door.locked=false;
+      document.getElementById('objective').textContent='Door unlocked! Now escape!';
+    } else if(!door.locked && player.hasCrowbar){
+      gamePhase='won';
+      document.getElementById('gameOver').style.display='block';
+      document.getElementById('gameOverText').textContent='You escaped!';
+    }
+  }
+}
+
+// Distance helper
+function distance(x1,y1,x2,y2){ return Math.sqrt((x1-x2)**2+(y1-y2)**2); }
+
+// Ghost chasing
+function updateGhost(){
+  if(ghost.active && (gamePhase==='exploring' || gamePhase==='maze')){
+    const dx=player.x-ghost.x;
+    const dy=player.y-ghost.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>0.5){
+      ghost.x+=dx/dist*ghost.chaseSpeed;
+      ghost.y+=dy/dist*ghost.chaseSpeed;
+    }
+    if(dist<0.7){
+      player.health-=0.2;
+      damageFlash=0.5;
+      document.getElementById('healthBar').style.width=player.health+'%';
+      if(player.health<=0){
+        gamePhase='dead';
+        document.getElementById('gameOver').style.display='block';
+      }
+    }
+  }
+}
+
+// Raycast
+function castRay(angle){
+  const rayX=Math.cos(angle);
+  const rayY=Math.sin(angle);
+  let distance=0;
+  let hitWall=false;
+  let hitObject=null;
+  let wallShade=1;
+  while(!hitWall && distance<30){
+    distance+=0.1;
+    const testX=player.x+rayX*distance;
+    const testY=player.y+rayY*distance;
+    const mapX=Math.floor(testX);
+    const mapY=Math.floor(testY);
+    if(mapX<0||mapY<0||mapX>=map[0].length||mapY>=map.length){
+      hitWall=true;
+    } else if(map[mapY][mapX]===1){
+      hitWall=true;
+      wallShade=0.7;
+    }
+    // Check objects
+    if(!deadBody.seen && distance<1 && distance(player.x,player.y,deadBody.x,deadBody.y)<0.7){
+      hitObject={type:'body',distance:distance};
+    }
+    if(!keyItem.found && distance<1 && Math.abs(testX-keyItem.x)<0.5 && Math.abs(testY-keyItem.y)<0.5){
+      hitObject={type:'key',distance:distance};
+    }
+    if(!safe.opened && distance<1 && Math.abs(testX-safe.x)<0.5 && Math.abs(testY-safe.y)<0.5){
+      hitObject={type:'safe',distance:distance};
+    }
+    if(distance<1 && Math.abs(testX-door.x)<0.5 && Math.abs(testY-door.y)<0.5 && !door.locked){
+      hitObject={type:'door',distance:distance};
+    }
+  }
+  return {distance:hitWall?distance:30, hitObject:hitObject, wallShade:wallShade};
+}
+
+// Draw character
+function drawCharacter(x,y,w,h, speaking, isPlayer){
+  ctx.fillStyle=isPlayer?'#3366cc':'#cc6633';
+  ctx.fillRect(x,y,w,h*0.6);
+  ctx.fillStyle='#deb887';
+  ctx.beginPath();
+  ctx.arc(x+w/2,y+h/4,w/4,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#000';
+  ctx.fillRect(x+w*0.4,y+h*0.2,w*0.1,h*0.03);
+  ctx.fillRect(x+w*0.5,y+h*0.2,w*0.1,h*0.03);
+  if(speaking && Math.floor(Date.now()/200)%2===0){
+    ctx.fillRect(x+w*0.45,y+h*0.3,w*0.1,h*0.02);
+  } else {
+    ctx.fillRect(x+w*0.45,y+h*0.3,w*0.1,h*0.01);
+  }
+  ctx.fillStyle=isPlayer?'#3366cc':'#cc6633';
+  ctx.fillRect(x+w*0.15,y+h*0.5,w*0.15,h*0.3);
+  ctx.fillRect(x+w*0.7,y+h*0.5,w*0.15,h*0.3);
+}
+
+// Draw car
+function drawCar(x,y,w,h){
+  ctx.fillStyle='#333';
+  ctx.fillRect(x,y+h*0.4,w,h*0.4);
+  ctx.fillStyle='#444';
+  ctx.fillRect(x+w*0.2,y,w*0.6,h*0.5);
+  ctx.fillStyle='#87ceeb';
+  ctx.fillRect(x+w*0.25,y+h*0.05,w*0.2,h*0.35);
+  ctx.fillRect(x+w*0.55,y+h*0.05,w*0.2,h*0.35);
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.arc(x+w*0.25,y+h*0.85,w*0.12,0,Math.PI*2);
+  ctx.arc(x+w*0.75,y+h*0.85,w*0.12,0,Math.PI*2);
+  ctx.fill();
+}
+
+// Render dialog scene
+function renderDialogScene(){
+  ctx.fillStyle='#87ceeb';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#666';
+  ctx.fillRect(0,canvas.height*0.6,canvas.width,canvas.height*0.4);
+  ctx.fillStyle='#333';
+  ctx.fillRect(0,canvas.height*0.65,canvas.width,canvas.height*0.2);
+  ctx.fillStyle='#ff0';
+  for(let i=0;i<10;i++){
+    ctx.fillRect(i*120+20,canvas.height*0.74,60,8);
+  }
+  for(let r=0;r<4;r++){
+    for(let c=0;c<5;c++){
+      ctx.fillStyle=Math.random()>0.6?'#555':'#666';
+      ctx.fillRect(canvas.width*0.35+c*80,canvas.height*0.6 - r*80,40,60);
+    }
+  }
+  drawCar(canvas.width*0.15,canvas.height*0.5,300,150);
+  const currentSpeaker=dialogQueue[currentDialog]?.name;
+  drawCharacter(canvas.width*0.6,canvas.height*0.4,150,250,
+    currentSpeaker==="Hitchhiker",false);
+  drawCharacter(canvas.width*0.3,canvas.height*0.45,140,240,
+    currentSpeaker==="You",true);
+}
+
+// Update player
+function updatePlayer(){
+  // WASD for walking
+  const moveSpeed=0.02;
+  if(keys['w']){ player.x+=Math.cos(player.angle)*moveSpeed; player.y+=Math.sin(player.angle)*moveSpeed; }
+  if(keys['s']){ player.x-=Math.cos(player.angle)*moveSpeed; player.y-=Math.sin(player.angle)*moveSpeed; }
+  if(keys['a']){ player.angle-=0.03; }
+  if(keys['d']){ player.angle+=0.03; }
+
+  // Keep in bounds
+  if(player.x<0.5) player.x=0.5;
+  if(player.x>map[0].length-0.5) player.x=map[0].length-0.5;
+  if(player.y<0.5) player.y=0.5;
+  if(player.y>map.length-0.5) player.y=map.length-0.5;
+
+  checkInteractions();
+}
+
+// Interaction checks
+function checkInteractions(){
+  // Dead body
+  if(!deadBody.seen && distance(player.x,player.y,deadBody.x,deadBody.y)<0.7){
+    deadBody.seen=true;
+    gamePhase='dead';
+    showDialog(deadBodyDialogs);
+  }
+  // Key
+  if(!keyItem.found && distance(player.x,player.y,keyItem.x,keyItem.y)<0.7){
+    keyItem.found=true;
+    player.hasKey=true;
+    document.getElementById('objective').textContent='Find the safe!';
+  }
+  // Safe
+  if(!safe.opened && distance(player.x,player.y,safe.x,safe.y)<0.7 && player.hasKey){
+    safe.opened=true;
+    document.getElementById('objective').textContent='Open the safe!';
+  }
+  // Crowbar in safe
+  if(safe.opened && !player.hasCrowbar && distance(player.x,player.y,safe.x,safe.y)<0.7 && safe.containsCrowbar){
+    player.hasCrowbar=true;
+    document.getElementById('objective').textContent='Use crowbar to escape!';
+  }
+  // Door
+  if(distance(player.x,player.y,door.x,door.y)<0.7){
+    if(door.locked && !player.hasKey){
+      document.getElementById('objective').textContent='Door is locked. Find the key!';
+    } else if(door.locked && player.hasKey){
+      door.locked=false;
+      document.getElementById('objective').textContent='Door unlocked! Now escape!';
+    } else if(!door.locked && player.hasCrowbar){
+      gamePhase='won';
+      document.getElementById('gameOver').style.display='block';
+      document.getElementById('gameOverText').textContent='You escaped!';
+    }
+  }
+}
+
+// Distance helper
+function distance(x1,y1,x2,y2){ return Math.sqrt((x1-x2)**2+(y1-y2)**2); }
+
+// Ghost chasing
+function updateGhost(){
+  if(ghost.active && (gamePhase==='exploring' || gamePhase==='maze')){
+    const dx=player.x-ghost.x;
+    const dy=player.y-ghost.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>0.5){
+      ghost.x+=dx/dist*ghost.chaseSpeed;
+      ghost.y+=dy/dist*ghost.chaseSpeed;
+    }
+    if(dist<0.7){
+      player.health-=0.2;
+      damageFlash=0.5;
+      document.getElementById('healthBar').style.width=player.health+'%';
+      if(player.health<=0){
+        gamePhase='dead';
+        document.getElementById('gameOver').style.display='block';
+      }
+    }
+  }
+}
+
+// Helper functions
+function distance(x,y,x2,y2){ return Math.sqrt((x-x2)**2+(y-y2)**2); }
+
+// Drawing scene
+function renderDriving() {
+  // Animate progress
+  driveProgress+=0.008;
+  // Sky
+  const grad=ctx.createLinearGradient(0,0,0,canvas.height/2);
+  grad.addColorStop(0,'#001122');
+  grad.addColorStop(1,'#003344');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,canvas.width,canvas.height/2);
+  ctx.fillStyle='#0a1a0a';
+  ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
+  // Road with perspective
+  const roadWidth=400+Math.sin(driveProgress*2)*50;
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath();
+  ctx.moveTo(canvas.width/2 - roadWidth/2,canvas.height/2);
+  ctx.lineTo(canvas.width/2 + roadWidth/2,canvas.height/2);
+  ctx.lineTo(canvas.width,canvas.height);
+  ctx.lineTo(0,canvas.height);
+  ctx.closePath();
+  ctx.fill();
+
+  // Lane markers
+  ctx.fillStyle='#ff0';
+  for(let i=0;i<10;i++){
+    let yOffset=(i*100 + driveProgress*600)%canvas.height;
+    ctx.fillRect(canvas.width/2-5,yOffset,10,40);
+  }
+
+  // Sides (buildings or trees)
+  ctx.fillStyle='#0d1f0d';
+  for(let i=0;i<8;i++){
+    let baseY=(i*80+driveProgress*400)%canvas.height;
+    let pers=baseY/canvas.height;
+    let w=40+pers*60;
+    let h=100+pers*150;
+    ctx.fillRect(50,baseY,w,h);
+    ctx.fillRect(canvas.width-50-w,baseY,w,h);
+  }
+
+  // Headlights glow
+  let gradient=ctx.createRadialGradient(canvas.width/2,canvas.height*0.9,50,canvas.width/2,canvas.height,400);
+  gradient.addColorStop(0,'rgba(255,255,200,0.3)');
+  gradient.addColorStop(1,'rgba(255,255,200,0)');
+  ctx.fillStyle=gradient;
+  ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
+
+  // Dashboard overlay
+  ctx.fillStyle='#000';
+  ctx.globalAlpha=0.5;
+  ctx.fillRect(0,canvas.height*0.85,canvas.width,canvas.height*0.15);
+  ctx.globalAlpha=1;
+
+  // End scene
+  if(driveProgress>=10){
+    gamePhase='arrived';
+    showDialog(arriveDialogs);
+  }
+}
+
+function renderArrival() {
+  ctx.fillStyle='#0a0a1a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#1a1a1a';
+  ctx.fillRect(0,canvas.height*0.7,canvas.width,canvas.height*0.3);
+  ctx.fillStyle='#2a2a2a';
+  ctx.fillRect(canvas.width*0.3,canvas.height*0.2,canvas.width*0.4,canvas.height*0.5);
+  // Windows
+  for(let r=0;r<4;r++){
+    for(let c=0;c<5;c++){
+      ctx.fillStyle=Math.random()>0.6?'#ffcc66':'#111';
+      ctx.fillRect(canvas.width*0.35+c*80,canvas.height*0.25+r*80,40,60);
+    }
+  }
+  // Car
+  drawCar(canvas.width*0.1,canvas.height*0.6,200,120);
+  // Hitchhiker walking
+  let walkProgress= (Date.now()%3000)/3000;
+  let hitchX=canvas.width*0.15+(canvas.width*0.3)*walkProgress;
+  drawCharacter(hitchX,canvas.height*0.55,100,180,false,false);
+}
+
+function renderMaze() {
+  ctx.fillStyle='#222';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#555';
+  ctx.font='20px Arial';
+  ctx.fillText('Maze - find the key, safe, or crowbar!',20,40);
+  const cellSize=40;
+  for(let y=0;y<map.length;y++){
+    for(let x=0;x<map[0].length;x++){
+      if(map[y][x]===1){
+        ctx.fillStyle='#444';
+        ctx.fillRect(x*cellSize,y*cellSize,cellSize,cellSize);
+      }
+    }
+  }
+  ctx.fillStyle='#0f0';
+  ctx.fillRect(keyItem.x*cellSize,keyItem.y*cellSize,cellSize,cellSize);
+  ctx.fillStyle='#ff0';
+  ctx.fillRect(safe.x*cellSize,safe.y*cellSize,cellSize,cellSize);
+  ctx.fillStyle='#f00';
+  ctx.fillRect(deadBody.x*cellSize,deadBody.y*cellSize,cellSize,cellSize);
+  ctx.fillStyle=door.locked?'#888':'#0f0';
+  ctx.fillRect(door.x*cellSize,door.y*cellSize,cellSize,cellSize);
+  // Arrow to dead body if not seen
+  if(!deadBody.seen){
+    ctx.fillStyle='white';
+    ctx.font='30px Arial';
+    ctx.fillText('→',deadBody.x*cellSize+10,deadBody.y*cellSize+30);
+  }
+}
+
+// Draw character
+function drawCharacter(x,y,w,h, speaking, isPlayer){
+  ctx.fillStyle=isPlayer?'#3366cc':'#cc6633';
+  ctx.fillRect(x,y,w,h*0.6);
+  ctx.fillStyle='#deb887';
+  ctx.beginPath();
+  ctx.arc(x+w/2,y+h/4,w/4,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#000';
+  ctx.fillRect(x+w*0.4,y+h*0.2,w*0.1,h*0.03);
+  ctx.fillRect(x+w*0.5,y+h*0.2,w*0.1,h*0.03);
+  if(speaking && Math.floor(Date.now()/200)%2===0){
+    ctx.fillRect(x+w*0.45,y+h*0.3,w*0.1,h*0.02);
+  } else {
+    ctx.fillRect(x+w*0.45,y+h*0.3,w*0.1,h*0.01);
+  }
+  ctx.fillStyle=isPlayer?'#3366cc':'#cc6633';
+  ctx.fillRect(x+w*0.15,y+h*0.5,w*0.15,h*0.3);
+  ctx.fillRect(x+w*0.7,y+h*0.5,w*0.15,h*0.3);
+}
+
+// Draw car
+function drawCar(x,y,w,h){
+  ctx.fillStyle='#333';
+  ctx.fillRect(x,y+h*0.4,w,h*0.4);
+  ctx.fillStyle='#444';
+  ctx.fillRect(x+w*0.2,y,w*0.6,h*0.5);
+  ctx.fillStyle='#87ceeb';
+  ctx.fillRect(x+w*0.25,y+h*0.05,w*0.2,h*0.35);
+  ctx.fillRect(x+w*0.55,y+h*0.05,w*0.2,h*0.35);
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.arc(x+w*0.25,y+h*0.85,w*0.12,0,Math.PI*2);
+  ctx.arc(x+w*0.75,y+h*0.85,w*0.12,0,Math.PI*2);
+  ctx.fill();
+}
+
+// Draw text
+function drawText(text,x,y){
+  ctx.fillStyle='#fff';
+  ctx.font='20px Arial';
+  ctx.fillText(text,x,y);
+}
+
+// Show dialog
+function showDeadBodyDialog(){
+  showDialog(deadBodyDialogs);
+}
+
+// Mouse click to lock pointer
+canvas.addEventListener('click', ()=>{canvas.requestPointerLock();});
+
+// Main game loop
+function gameLoop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(gamePhase==='driving'){
+    renderDriving();
+  } else if(gamePhase==='arrived'){
+    renderArrival();
+  } else if(gamePhase==='maze'){
+    renderMaze();
+  } else if(gamePhase==='exploring'){
+    updatePlayer();
+    updateGhost();
+    renderMaze();
+    drawUI();
+    drawDirections();
+  } else if(gamePhase==='dead'||gamePhase==='won'){
+    drawUI();
+  }
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+// Handle key presses
+window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=true; });
+window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
+
+// Handle dialog space
+window.addEventListener('keydown', e=>{
+  if(e.key===' ' && dialogQueue.length>0){
+    e.preventDefault();
+    advanceDialog();
+  }
+});
+</script>
+</body>
+</html>

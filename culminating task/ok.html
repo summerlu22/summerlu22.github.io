@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Abandoned Hospital</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+        }
+
+        #gameCanvas {
+            display: block;
+            cursor: none;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            font-size: 18px;
+            z-index: 10;
+        }
+
+        #health {
+            color: #ff4444;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #message {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px #000;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        #gameOver h1 {
+            font-size: 60px;
+            color: #ff0000;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px #000;
+        }
+
+        #gameOver.won h1 {
+            color: #00ff00;
+        }
+
+        #restartBtn {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #ff0000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        #restartBtn:hover {
+            background: #cc0000;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #crosshair::before,
+        #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        #crosshair::before {
+            width: 2px;
+            height: 20px;
+            left: 9px;
+        }
+
+        #crosshair::after {
+            width: 20px;
+            height: 2px;
+            top: 9px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="crosshair"></div>
+    <div id="ui">
+        <div id="health">Health: 100%</div>
+        <div id="key">Key: Not Found</div>
+    </div>
+    <div id="message">Find the key to escape the hospital...</div>
+    <div id="gameOver">
+        <h1 id="gameOverText">GAME OVER</h1>
+        <button id="restartBtn">RESTART</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game state
+        let player = {
+            x: 5,
+            y: 5,
+            z: 0,
+            angle: 0,
+            health: 100
+        };
+
+        let ghost = {
+            x: 15,
+            y: 15,
+            active: true
+        };
+
+        let key = {
+            x: 20,
+            y: 8,
+            collected: false
+        };
+
+        let exit = {
+            x: 25,
+            y: 3
+        };
+
+        let keys = {};
+        let gameState = 'playing'; // playing, won, dead
+        let mouseX = 0;
+        let damageFlash = 0;
+
+        // Map (1 = wall, 0 = empty)
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,0,1,1,1,0,0,0,1,1,1,1,0,0,0,1,1,0,1,1,1,0,0,0,0,0,1],
+            [1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1],
+            [1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,1,0,0,0,1],
+            [1,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,1,0,0,0,1,1,0,0,0,0,1,1,1,0,0,0,1,1,0,0,1,1,1,0,1],
+            [1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,1,1,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,0,0,0,0,0,1],
+            [1,0,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,1],
+            [1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // Event listeners
+        document.addEventListener('keydown', function(e) {
+            keys[e.key.toLowerCase()] = true;
+        });
+
+        document.addEventListener('keyup', function(e) {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.movementX || 0;
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', restart);
+
+        // Request pointer lock
+        canvas.addEventListener('click', function() {
+            canvas.requestPointerLock();
+        });
+
+        function restart() {
+            player = { x: 5, y: 5, z: 0, angle: 0, health: 100 };
+            ghost = { x: 15, y: 15, active: true };
+            key.collected = false;
+            gameState = 'playing';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('message').textContent = 'Find the key to escape the hospital...';
+        }
+
+        function updatePlayer() {
+            if (gameState !== 'playing') return;
+
+            // Rotate with mouse
+            player.angle += mouseX * 0.003;
+            mouseX = 0;
+
+            const moveSpeed = 0.05;
+            let newX = player.x;
+            let newY = player.y;
+
+            if (keys['w']) {
+                newX += Math.cos(player.angle) * moveSpeed;
+                newY += Math.sin(player.angle) * moveSpeed;
+            }
+            if (keys['s']) {
+                newX -= Math.cos(player.angle) * moveSpeed;
+                newY -= Math.sin(player.angle) * moveSpeed;
+            }
+            if (keys['a']) {
+                newX += Math.cos(player.angle - Math.PI/2) * moveSpeed;
+                newY += Math.sin(player.angle - Math.PI/2) * moveSpeed;
+            }
+            if (keys['d']) {
+                newX += Math.cos(player.angle + Math.PI/2) * moveSpeed;
+                newY += Math.sin(player.angle + Math.PI/2) * moveSpeed;
+            }
+
+            // Collision detection
+            if (map[Math.floor(newY)] && map[Math.floor(newY)][Math.floor(newX)] === 0) {
+                player.x = newX;
+                player.y = newY;
+            }
+
+            // Check key pickup
+            if (!key.collected) {
+                const dx = player.x - key.x;
+                const dy = player.y - key.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 0.5) {
+                    key.collected = true;
+                    document.getElementById('key').textContent = 'Key: FOUND!';
+                    document.getElementById('key').style.color = '#ffff00';
+                    document.getElementById('message').textContent = 'Key found! Head to the exit!';
+                }
+            }
+
+            // Check exit
+            if (key.collected) {
+                const dx = player.x - exit.x;
+                const dy = player.y - exit.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 1) {
+                    gameState = 'won';
+                    document.getElementById('gameOver').style.display = 'block';
+                    document.getElementById('gameOver').classList.add('won');
+                    document.getElementById('gameOverText').textContent = 'YOU ESCAPED!';
+                }
+            }
+        }
+
+        function updateGhost() {
+            if (gameState !== 'playing' || !ghost.active) return;
+
+            // Ghost chases player
+            const dx = player.x - ghost.x;
+            const dy = player.y - ghost.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist > 0.5) {
+                const speed = 0.02;
+                ghost.x += (dx / dist) * speed;
+                ghost.y += (dy / dist) * speed;
+            }
+
+            // Damage player if close
+            if (dist < 1.5) {
+                player.health -= 0.5;
+                damageFlash = 0.5;
+                document.getElementById('health').textContent = `Health: ${Math.floor(player.health)}%`;
+                
+                if (player.health <= 0) {
+                    gameState = 'dead';
+                    document.getElementById('gameOver').style.display = 'block';
+                    document.getElementById('gameOverText').textContent = 'GAME OVER';
+                }
+            }
+        }
+
+        function castRay(angle) {
+            const rayX = Math.cos(angle);
+            const rayY = Math.sin(angle);
+            let distance = 0;
+            let hitWall = false;
+            let hitObject = null;
+
+            while (!hitWall && distance < 30) {
+                distance += 0.1;
+                const testX = player.x + rayX * distance;
+                const testY = player.y + rayY * distance;
+
+                if (testX < 0 || testX >= map[0].length || testY < 0 || testY >= map.length) {
+                    hitWall = true;
+                } else if (map[Math.floor(testY)][Math.floor(testX)] === 1) {
+                    hitWall = true;
+                }
+
+                // Check for objects
+                if (!key.collected) {
+                    const dx = testX - key.x;
+                    const dy = testY - key.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 0.3) {
+                        hitObject = { type: 'key', distance: distance };
+                    }
+                }
+
+                if (ghost.active) {
+                    const dx = testX - ghost.x;
+                    const dy = testY - ghost.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 0.3) {
+                        if (!hitObject || distance < hitObject.distance) {
+                            hitObject = { type: 'ghost', distance: distance };
+                        }
+                    }
+                }
+
+                // Check exit
+                const ex = testX - exit.x;
+                const ey = testY - exit.y;
+                if (Math.sqrt(ex*ex + ey*ey) < 0.4) {
+                    if (!hitObject || distance < hitObject.distance) {
+                        hitObject = { type: 'exit', distance: distance };
+                    }
+                }
+            }
+
+            return { distance: hitWall ? distance : 30, hitObject: hitObject };
+        }
+
+        function render() {
+            // Clear screen
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ceiling
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+
+            // Draw floor
+            ctx.fillStyle = '#0d0d0d';
+            ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+            const fov = Math.PI / 3;
+            const numRays = canvas.width;
+
+            for (let i = 0; i < numRays; i++) {
+                const rayAngle = player.angle - fov/2 + (i / numRays) * fov;
+                const ray = castRay(rayAngle);
+                
+                const distance = ray.distance * Math.cos(rayAngle - player.angle);
+                const wallHeight = (canvas.height / distance) * 0.5;
+                
+                // Draw wall
+                const brightness = Math.max(20, 255 - distance * 15);
+                ctx.fillStyle = `rgb(${brightness * 0.3}, ${brightness * 0.2}, ${brightness * 0.2})`;
+                ctx.fillRect(i, canvas.height/2 - wallHeight, 1, wallHeight * 2);
+
+                // Draw objects
+                if (ray.hitObject && ray.hitObject.distance < ray.distance) {
+                    const objDist = ray.hitObject.distance * Math.cos(rayAngle - player.angle);
+                    const objHeight = (canvas.height / objDist) * 0.3;
+                    
+                    if (ray.hitObject.type === 'key') {
+                        ctx.fillStyle = '#ffff00';
+                    } else if (ray.hitObject.type === 'ghost') {
+                        ctx.fillStyle = '#ff0000';
+                    } else if (ray.hitObject.type === 'exit') {
+                        ctx.fillStyle = key.collected ? '#00ff00' : '#666666';
+                    }
+                    
+                    ctx.fillRect(i, canvas.height/2 - objHeight/2, 1, objHeight);
+                }
+            }
+
+            // Damage flash
+            if (damageFlash > 0) {
+                ctx.fillStyle = `rgba(255, 0, 0, ${damageFlash * 0.3})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                damageFlash -= 0.02;
+            }
+        }
+
+        function gameLoop() {
+            updatePlayer();
+            updateGhost();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

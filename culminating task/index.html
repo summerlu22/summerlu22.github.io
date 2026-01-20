@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Rush Game</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Lucide icons as simple SVG components
+        const Play = ({ size = 24, fill = "none" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+        );
+
+        const Info = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        );
+
+        const Home = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        );
+
+        const Settings = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        );
+
+        const RotateCcw = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+        );
+
+        const ArrowLeft = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        );
+
+        function ButtonRushGame() {
+            const [page, setPage] = useState('home');
+            const [difficulty, setDifficulty] = useState('medium');
+            const [timeLimit, setTimeLimit] = useState(45);
+            const [score, setScore] = useState(0);
+            const [highScores, setHighScores] = useState({
+                easy: { 30: 0, 45: 0, 60: 0 },
+                medium: { 30: 0, 45: 0, 60: 0 },
+                hard: { 30: 0, 45: 0, 60: 0 }
+            });
+            const [timeLeft, setTimeLeft] = useState(45);
+            const [buttons, setButtons] = useState([]);
+            const [buttonTimer, setButtonTimer] = useState(3);
+            const [lastSettings, setLastSettings] = useState({ difficulty: 'medium', timeLimit: 45 });
+            const [feedback, setFeedback] = useState([]);
+            const [showTip, setShowTip] = useState(false);
+            const [tipMessage, setTipMessage] = useState('');
+            const gameTimerRef = useRef(null);
+            const buttonTimerRef = useRef(null);
+
+            const difficultySettings = {
+                easy: { count: 12, buttonTime: 3, colorDiff: true, sizeDiff: false, color: 'bg-yellow-400' },
+                medium: { count: 18, buttonTime: 3, colorDiff: true, sizeDiff: false, color: 'bg-blue-300' },
+                hard: { count: 16, buttonTime: 2, colorDiff: false, sizeDiff: true, color: 'bg-blue-500' }
+            };
+
+            useEffect(() => {
+                if (page === 'game') {
+                    generateButtons();
+                    startGameTimer();
+                    startButtonTimer();
+                }
+                return () => {
+                    clearInterval(gameTimerRef.current);
+                    clearInterval(buttonTimerRef.current);
+                };
+            }, [page]);
+
+            useEffect(() => {
+                if (buttonTimer <= 0 && page === 'game') {
+                    setScore(s => Math.max(0, s - 1));
+                    generateButtons();
+                    resetButtonTimer();
+                }
+            }, [buttonTimer]);
+
+            useEffect(() => {
+                if (timeLeft <= 0 && page === 'game') {
+                    endGame();
+                }
+            }, [timeLeft]);
+
+            const startGameTimer = () => {
+                gameTimerRef.current = setInterval(() => {
+                    setTimeLeft(t => t - 1);
+                }, 1000);
+            };
+
+            const startButtonTimer = () => {
+                buttonTimerRef.current = setInterval(() => {
+                    setButtonTimer(t => t - 1);
+                }, 1000);
+            };
+
+            const resetButtonTimer = () => {
+                setButtonTimer(difficultySettings[difficulty].buttonTime);
+            };
+
+            const generateButtons = () => {
+                const settings = difficultySettings[difficulty];
+                const btns = [];
+                const specialIndex = Math.floor(Math.random() * settings.count);
+                const usedPositions = [];
+                const buttonSize = settings.sizeDiff ? 4 : 4;
+                
+                const specialX = Math.random() * (95 - buttonSize);
+                const specialY = Math.random() * (95 - buttonSize);
+                usedPositions.push({ x: specialX, y: specialY, isSpecial: true });
+                
+                for (let i = 0; i < settings.count; i++) {
+                    let x, y, overlap;
+                    let attempts = 0;
+                    
+                    if (i === specialIndex) {
+                        btns.push({
+                            id: i,
+                            isSpecial: true,
+                            x: specialX,
+                            y: specialY
+                        });
+                        continue;
+                    }
+                    
+                    do {
+                        x = Math.random() * (95 - buttonSize);
+                        y = Math.random() * (95 - buttonSize);
+                        overlap = false;
+                        
+                        for (let pos of usedPositions) {
+                            const distance = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
+                            const minDistance = pos.isSpecial ? 6 : 5;
+                            if (distance < minDistance) {
+                                overlap = true;
+                                break;
+                            }
+                        }
+                        attempts++;
+                    } while (overlap && attempts < 100);
+                    
+                    usedPositions.push({ x, y, isSpecial: false });
+                    
+                    btns.push({
+                        id: i,
+                        isSpecial: i === specialIndex,
+                        x,
+                        y
+                    });
+                }
+                setButtons(btns);
+                resetButtonTimer();
+            };
+
+            const handleButtonClick = (isSpecial, x, y) => {
+                const points = isSpecial ? 1 : -1;
+                const feedbackId = Date.now();
+                
+                setFeedback(prev => [...prev, { id: feedbackId, points, x, y }]);
+                
+                setTimeout(() => {
+                    setFeedback(prev => prev.filter(f => f.id !== feedbackId));
+                }, 800);
+                
+                if (isSpecial) {
+                    setScore(s => s + 1);
+                } else {
+                    setScore(s => Math.max(0, s - 1));
+                }
+                generateButtons();
+            };
+
+            const startGame = () => {
+                const isDifferentDifficulty = lastSettings.difficulty !== difficulty;
+                setLastSettings({ difficulty, timeLimit });
+                setScore(0);
+                setTimeLeft(timeLimit);
+                
+                if (isDifferentDifficulty) {
+                    const tips = {
+                        easy: 'You have 3 seconds to click the yellow button!',
+                        medium: 'You have 3 seconds to click the lighter blue button!',
+                        hard: 'You have 2 seconds to click the bigger button!'
+                    };
+                    setTipMessage(tips[difficulty]);
+                    setShowTip(true);
+                    
+                    setTimeout(() => {
+                        setShowTip(false);
+                        setPage('game');
+                    }, 1500);
+                } else {
+                    setPage('game');
+                }
+            };
+
+            const endGame = () => {
+                clearInterval(gameTimerRef.current);
+                clearInterval(buttonTimerRef.current);
+                if (score > highScores[difficulty][timeLimit]) {
+                    setHighScores(prev => ({
+                        ...prev,
+                        [difficulty]: {
+                            ...prev[difficulty],
+                            [timeLimit]: score
+                        }
+                    }));
+                }
+                setPage('results');
+            };
+
+            const playAgain = () => {
+                setDifficulty(lastSettings.difficulty);
+                setTimeLimit(lastSettings.timeLimit);
+                setScore(0);
+                setTimeLeft(lastSettings.timeLimit);
+                setPage('game');
+            };
+
+            if (page === 'home') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+                        <div className="text-center">
+                            <h1 className="text-6xl font-bold text-white mb-8">Click the button!</h1>
+                            <div className="flex gap-4 justify-center">
+                                <button
+                                    onClick={() => setPage('settings')}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-8 px-16 rounded-full text-3xl shadow-lg transform hover:scale-105 transition flex items-center gap-3"
+                                >
+                                    <Play size={40} fill="white" />
+                                    PLAY
+                                </button>
+                                <button
+                                    onClick={() => setPage('instructions')}
+                                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-8 px-12 rounded-full text-2xl shadow-lg transform hover:scale-105 transition flex items-center gap-2"
+                                >
+                                    <Info size={32} />
+                                    Instructions
+                                </button>
+                                <button
+                                    onClick={() => setPage('highscores')}
+                                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-8 px-12 rounded-full text-2xl shadow-lg transform hover:scale-105 transition"
+                                >
+                                    Highscores
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (page === 'highscores') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl p-8 max-w-2xl shadow-2xl">
+                            <h2 className="text-4xl font-bold mb-8 text-center text-purple-700">Highscores</h2>
+                            
+                            {['easy', 'medium', 'hard'].map(diff => (
+                                <div key={diff} className="mb-8">
+                                    <h3 className="text-3xl font-bold text-center mb-4 text-gray-800 capitalize">{diff}</h3>
+                                    <div className="flex justify-around gap-4">
+                                        {[30, 45, 60].map(time => (
+                                            <div key={time} className="text-center">
+                                                <p className="text-lg font-semibold text-gray-600">
+                                                    {time === 60 ? '1 minute' : `${time}s`}
+                                                </p>
+                                                <p className="text-2xl font-bold text-purple-600">
+                                                    {highScores[diff][time] > 0 ? highScores[diff][time] : 'N/A'}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            <button
+                                onClick={() => setPage('home')}
+                                className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full flex items-center gap-2 mx-auto"
+                            >
+                                <Home size={24} />
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (page === 'instructions') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl p-8 max-w-2xl shadow-2xl">
+                            <h2 className="text-4xl font-bold mb-6 text-purple-700">How to Play</h2>
+                            <div className="space-y-4 text-lg text-gray-700">
+                                <p><strong>Easy:</strong> Click the yellow button within 3 seconds. 12 buttons on screen.</p>
+                                <p><strong>Medium:</strong> Click the lighter blue button within 3 seconds. 18 buttons on screen!</p>
+                                <p><strong>Hard:</strong> Click the slightly bigger button within 2 seconds. Same color as others!</p>
+                                <p className="mt-4 text-green-600">✓ Click the correct button = +1 point</p>
+                                <p className="text-red-600">✗ Click wrong button or timeout = -1 point</p>
+                            </div>
+                            <button
+                                onClick={() => setPage('home')}
+                                className="mt-8 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full flex items-center gap-2 mx-auto"
+                            >
+                                <Home size={24} />
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (page === 'settings') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+                        {showTip && (
+                            <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+                                <div className="bg-purple-100 rounded-2xl p-12 max-w-lg shadow-2xl border-4 border-purple-500">
+                                    <p className="text-4xl font-bold text-purple-700 text-center">{tipMessage}</p>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="bg-white rounded-2xl p-8 max-w-md shadow-2xl relative">
+                            <button
+                                onClick={() => setPage('home')}
+                                className="absolute top-4 left-4 flex items-center gap-2 text-gray-600 hover:text-gray-800 font-semibold"
+                            >
+                                <ArrowLeft size={20} />
+                                Back to homepage
+                            </button>
+                            
+                            <div className="absolute top-4 right-4 text-lg font-bold text-purple-600">
+                                Highscore: {highScores[difficulty][timeLimit] > 0 ? highScores[difficulty][timeLimit] : 'N/A'}
+                            </div>
+                            
+                            <h2 className="text-4xl font-bold mb-8 text-center text-purple-700 mt-8">Choose Your Difficulty</h2>
+                            <div className="space-y-4 mb-8">
+                                {['easy', 'medium', 'hard'].map(d => (
+                                    <button
+                                        key={d}
+                                        onClick={() => setDifficulty(d)}
+                                        className={`w-full py-4 px-6 rounded-lg font-bold text-xl transition ${
+                                            difficulty === d
+                                                ? 'bg-purple-600 text-white scale-105'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        {d.charAt(0).toUpperCase() + d.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            <h3 className="text-3xl font-bold mb-4 text-center text-purple-700">Choose Time Limit</h3>
+                            <div className="space-y-4 mb-8">
+                                {[30, 45, 60].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setTimeLimit(t)}
+                                        className={`w-full py-4 px-6 rounded-lg font-bold text-xl transition ${
+                                            timeLimit === t
+                                                ? 'bg-blue-600 text-white scale-105'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        {t === 30 ? '30 seconds' : t === 45 ? '45 seconds' : '1 minute'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={startGame}
+                                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full text-2xl shadow-lg transform hover:scale-105 transition"
+                            >
+                                START!
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (page === 'game') {
+                const settings = difficultySettings[difficulty];
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-600 flex flex-col p-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <button
+                                onClick={endGame}
+                                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full shadow-lg"
+                            >
+                                Quit
+                            </button>
+                            <div className="text-6xl font-bold text-white">
+                                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                            </div>
+                            <div className="w-24"></div>
+                        </div>
+
+                        <div className="flex-1 relative bg-indigo-700 bg-opacity-30 rounded-2xl border-4 border-indigo-400 mx-4 mb-4">
+                            {buttons.map(btn => (
+                                <button
+                                    key={btn.id}
+                                    onClick={() => handleButtonClick(btn.isSpecial, btn.x, btn.y)}
+                                    className={`absolute rounded transition-all transform hover:scale-110 border-2 border-black ${
+                                        settings.colorDiff && btn.isSpecial
+                                            ? settings.color
+                                            : 'bg-blue-500'
+                                    }`}
+                                    style={{
+                                        left: `${btn.x}%`,
+                                        top: `${btn.y}%`,
+                                        width: settings.sizeDiff && btn.isSpecial ? '32px' : '28px',
+                                        height: settings.sizeDiff && btn.isSpecial ? '32px' : '28px'
+                                    }}
+                                />
+                            ))}
+                            
+                            {feedback.map(f => (
+                                <div
+                                    key={f.id}
+                                    className={`absolute text-xs font-bold pointer-events-none ${
+                                        f.points > 0 ? 'text-green-400' : 'text-red-400'
+                                    }`}
+                                    style={{
+                                        left: `${f.x}%`,
+                                        top: `${f.y}%`,
+                                        animation: 'fadeUp 0.8s ease-out'
+                                    }}
+                                >
+                                    {f.points > 0 ? '+1' : '-1'}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="text-4xl font-bold text-white ml-8 mb-4">
+                            Score: {score}
+                        </div>
+                        
+                        <style>{`
+                            @keyframes fadeUp {
+                                0% {
+                                    opacity: 1;
+                                    transform: translateY(0);
+                                }
+                                100% {
+                                    opacity: 0;
+                                    transform: translateY(-30px);
+                                }
+                            }
+                        `}</style>
+                    </div>
+                );
+            }
+
+            if (page === 'results') {
+                const currentHighScore = highScores[lastSettings.difficulty][lastSettings.timeLimit];
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl p-12 max-w-md shadow-2xl text-center">
+                            <h2 className="text-5xl font-bold mb-6 text-purple-700">Congrats!</h2>
+                            <p className="text-3xl mb-4 text-gray-700">You got <span className="font-bold text-purple-600">{score}</span> points!</p>
+                            <p className="text-2xl mb-8 text-gray-600">Your highscore: <span className="font-bold text-green-600">{currentHighScore}</span></p>
+                            
+                            <div className="space-y-4">
+                                <button
+                                    onClick={() => setPage('home')}
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full text-xl flex items-center justify-center gap-2"
+                                >
+                                    <Home size={24} />
+                                    Homepage
+                                </button>
+                                <button
+                                    onClick={() => setPage('settings')}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl flex items-center justify-center gap-2"
+                                >
+                                    <Settings size={24} />
+                                    Settings
+                                </button>
+                                <button
+                                    onClick={playAgain}
+                                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-full text-xl flex items-center justify-center gap-2"
+                                >
+                                    <RotateCcw size={24} />
+                                    Play Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ButtonRushGame />);
+    </script>
+</body>
+</html>
